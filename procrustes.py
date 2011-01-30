@@ -6,6 +6,7 @@ class Procrustes(object):
     def __getattr__(self, validator):
         if validator in register:
             return partial(create_class, validator)
+        raise AttributeError, validator
 
 procrustes = Procrustes()
 
@@ -31,6 +32,8 @@ class PBase(object):
 
     @staticmethod
     def configure(cls, *args, **kwargs):
+        cls.required = kwargs.pop('required', True)
+
         raise NotImplementedError, 'Define `configure` method'
 
     def validate(self):
@@ -45,6 +48,9 @@ class PBase(object):
     @property
     def data(self):
         return self.validated_data
+
+    def flatten(self, delimiter='__'):
+        yield '', self.validated_data
 
 
 class PTuple(PBase):
@@ -71,6 +77,12 @@ class PTuple(PBase):
         else:
             return None
 
+    def flatten(self, delimiter='__'):
+        for number, value in enumerate(self.validated_data):
+            for key, data in value.flatten(delimiter):
+                tail = delimiter + key if key else ''
+                yield str(number) + tail, data
+
 
 class PList(PBase):
     @staticmethod
@@ -90,6 +102,13 @@ class PList(PBase):
             return [i.data for i in self.validated_data]
         else:
             return None
+
+    def flatten(self, delimiter='__'):
+        for number, value in enumerate(self.validated_data):
+            for key, data in value.flatten(delimiter):
+                tail = delimiter + key if key else ''
+                yield str(number) + tail, data
+
 
 class PDict(PBase):
     @staticmethod
@@ -113,6 +132,12 @@ class PDict(PBase):
                                                     self.validated_data.items())
         else:
             return None
+
+    def flatten(self, delimiter='__'):
+        for name, value in self.validated_data.items():
+            for key, data in value.flatten(delimiter):
+                tail = delimiter + key if key else ''
+                yield name + tail, data
 
 
 class PString(PBase):
@@ -182,10 +207,14 @@ if __name__ == '__main__':
     PT = procrustes.Tuple(I, S, PL)
     pt = PT((9, '234234', xrange(3)))
     print 'Tuple and List:', pt.data, pt.error
+    print dict(pt.flatten())
 
     PD = procrustes.Dict({'a': I, 'b': S, 'c': PL})
     pd = PD({'a': 34, 'b': 'sdfsdf', 'c': xrange(3)})
     print 'Dict and List:', pd.data, pd.error
+    print dict(pd.flatten())
 
-
-
+    PT = procrustes.Tuple(I, S, PD)
+    pt = PT((9, '234234', {'a': 34, 'b': 'sdfsdf', 'c': xrange(3)} ))
+    print 'All:', pt.data, pt.error
+    print dict(pt.flatten())
