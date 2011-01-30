@@ -13,31 +13,6 @@ class Procrustes(object):
 procrustes = Procrustes()
 
 
-def create_class(validator, *args, **kwargs):
-    cls = register[validator]
-    new_cls = type('Pc' + validator, (cls, ), {})
-    cls.configure(new_cls, *args, **kwargs)
-    return new_cls
-
-
-def group_by_key(flatten, delimiter='__'):
-    def split_key(flatten):
-        for key, value in sorted(flatten.items()):
-            keys = key.split(delimiter, 1)
-            base_key = keys[0]
-            child_key = keys[1] if len(keys)==2 else ''
-            yield base_key, child_key, value
-
-    collector = defaultdict(lambda: {})
-    for key, child_key, value in split_key(flatten):
-        collector[key][child_key] = value
-    return collector
-
-
-class ValidationError(Exception):
-    pass
-
-
 class PBase(object):
     def __init__(self, data, validate=True):
         self._data = data
@@ -48,11 +23,14 @@ class PBase(object):
 
     @staticmethod
     def configure(cls, *args, **kwargs):
-        cls.required = kwargs.pop('required', True)
-
         raise NotImplementedError, 'Define `configure` method'
 
     def validate(self):
+        if not self.required and self._data is None:
+            return None
+        return self.real_validate()
+
+    def real_validate(self):
         raise NotImplementedError, 'Define `validate` method'
 
     def safe_validate(self):
@@ -70,6 +48,8 @@ class PBase(object):
 
     @classmethod
     def from_flatten(cls, flatten):
+        if flatten is None:
+            return None
         try:
             return flatten['']
         except KeyError, TypeError:
@@ -81,7 +61,7 @@ class PTuple(PBase):
     def configure(cls, *types):
         cls._types = types
 
-    def validate(self):
+    def real_validate(self):
         data = tuple(self._data)
         if len(self._types) != len(data):
             raise ValidationError, 'Must be %i elements iterable' % len(self._types)
@@ -129,7 +109,7 @@ class PList(PBase):
     def configure(cls, _type):
         cls._type = _type
 
-    def validate(self):
+    def real_validate(self):
         instances = [self._type(i, True) for i in list(self._data)]
         errors = [i.error for i in instances if i.error]
         if errors:
@@ -160,7 +140,7 @@ class PDict(PBase):
     def configure(cls, named_types):
         cls._named_types = named_types
 
-    def validate(self):
+    def real_validate(self):
         instances = {}
         for name, typ in self._named_types.items():
             instances[name] = typ(self._data.get(name, None), True)
@@ -202,7 +182,7 @@ class PString(PBase):
         cls.max_length = max_length
         cls.regex = regex
 
-    def validate(self):
+    def real_validate(self):
         s = str(self._data)
         slen = len(s)
 
@@ -220,10 +200,10 @@ class PInteger(PBase):
         cls.min = min
         cls.max = max
 
-    def validate(self):
+    def real_validate(self):
         try:
             i = int(self._data)
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             raise ValidationError, 'Must be number, not string'
 
         if self.min is not None and i < self.min:
@@ -243,8 +223,36 @@ register = {
     }
 
 
+# Helpers
+def create_class(validator, *args, **kwargs):
+    cls = register[validator]
+    new_cls = type('Pc' + validator, (cls, ), {})
+    new_cls.required = kwargs.pop('required', True)
+    cls.configure(new_cls, *args, **kwargs)
+    return new_cls
+
+
+def group_by_key(flatten, delimiter='__'):
+    def split_key(flatten):
+        for key, value in sorted(flatten.items()):
+            keys = key.split(delimiter, 1)
+            base_key = keys[0]
+            child_key = keys[1] if len(keys)==2 else ''
+            yield base_key, child_key, value
+
+    collector = defaultdict(lambda: {})
+    for key, child_key, value in split_key(flatten):
+        collector[key][child_key] = value
+    return collector
+
+
+# Exceptions
+class ValidationError(Exception):
+    pass
+
+
 if __name__ == '__main__':
-    I = procrustes.Integer(max=90)
+    I = procrustes.Integer(max=90, required=False)
     S = procrustes.String()
     I(10).validate()
     I(100).safe_validate()
@@ -277,4 +285,8 @@ if __name__ == '__main__':
     print 'All:', pt.data, pt.error
     flatten = dict(pt.flatten())
     print 'Flatten:', flatten
+    flatten = {'2__b': 'sdfsdf', '2__c__0': 0, '2__c__1': 1, '2__c__2': 2, '1': '234234', '0': 9}
     print 'Unflatten:', PT.from_flatten(flatten)
+
+    pt = PT(PT.from_flatten(flatten))
+    print 'All:', pt.data, pt.error
