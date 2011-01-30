@@ -109,7 +109,7 @@ class PTuple(PBase):
                 i = number - 1
             collector.append(cls.types[number].bulge(flatchild))
             i = i + 1
-        return collector
+        return tuple(collector)
 
 
 class PList(PBase):
