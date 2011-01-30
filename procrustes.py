@@ -1,5 +1,7 @@
 # Procrustes
 from functools import partial
+from sorteddict import sorteddict
+from collections import defaultdict
 
 
 class Procrustes(object):
@@ -16,6 +18,20 @@ def create_class(validator, *args, **kwargs):
     new_cls = type('Pc' + validator, (cls, ), {})
     cls.configure(new_cls, *args, **kwargs)
     return new_cls
+
+
+def group_by_key(flatten, delimiter='__'):
+    def split_key(flatten):
+        for key, value in sorted(flatten.items()):
+            keys = key.split(delimiter, 1)
+            base_key = keys[0]
+            child_key = keys[1] if len(keys)==2 else ''
+            yield base_key, child_key, value
+
+    collector = defaultdict(lambda: {})
+    for key, child_key, value in split_key(flatten):
+        collector[key][child_key] = value
+    return collector
 
 
 class ValidationError(Exception):
@@ -52,6 +68,13 @@ class PBase(object):
     def flatten(self, delimiter='__'):
         yield '', self.validated_data
 
+    @classmethod
+    def from_flatten(cls, flatten):
+        try:
+            return flatten['']
+        except KeyError, TypeError:
+            return None
+
 
 class PTuple(PBase):
     @staticmethod
@@ -83,6 +106,23 @@ class PTuple(PBase):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
 
+    @classmethod
+    def from_flatten(cls, flatten, delimiter='__'):
+        i = 0
+        collector = []
+        for key, child_flatten in sorted(group_by_key(flatten, delimiter).items()):
+            try:
+                number = int(key)
+            except ValueError:
+                continue
+            if i < number:
+                # TODO OMG
+                collector.extend([None] * (number - i))
+                i = number - 1
+            collector.append(cls._types[number].from_flatten(child_flatten))
+            i = i + 1
+        return collector
+
 
 class PList(PBase):
     @staticmethod
@@ -108,6 +148,11 @@ class PList(PBase):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
+
+    @classmethod
+    def from_flatten(cls, flatten, delimiter='__'):
+        return [cls._type.from_flatten(child_flatten) for child_flatten in 
+                                      group_by_key(flatten, delimiter).values()]
 
 
 class PDict(PBase):
@@ -138,6 +183,16 @@ class PDict(PBase):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield name + tail, data
+
+    @classmethod
+    def from_flatten(cls, flatten, delimiter='__'):
+        result = {}
+        grouped = group_by_key(flatten, delimiter)
+        for name, ftype in cls._named_types.items():
+            child_flatten = grouped.pop(name, None)
+            result[name] = ftype.from_flatten(child_flatten)
+        #TODO we may have in `grouped` unmatched data
+        return result
 
 
 class PString(PBase):
@@ -200,6 +255,9 @@ if __name__ == '__main__':
     PT = procrustes.Tuple(I, S, I)
     pt = PT([10, 'sdfsdf', 30])
     print 'Tuple:', pt.data, pt.error
+    flatten = dict(pt.flatten())
+    print 'Flatten:', flatten
+    print 'Unflatten:', PT.from_flatten(flatten)
 
     pl = PL(xrange(10))
     print 'List:', pl.data, pl.error
@@ -217,4 +275,6 @@ if __name__ == '__main__':
     PT = procrustes.Tuple(I, S, PD)
     pt = PT((9, '234234', {'a': 34, 'b': 'sdfsdf', 'c': xrange(3)} ))
     print 'All:', pt.data, pt.error
-    print dict(pt.flatten())
+    flatten = dict(pt.flatten())
+    print 'Flatten:', flatten
+    print 'Unflatten:', PT.from_flatten(flatten)
