@@ -32,12 +32,16 @@ class PBase(object):
         raise NotImplementedError, 'Define `configure` method'
 
     def validate(self):
+        '''Validate data and return it
+        '''
         if not self.required and self.raw_data is None:
             return None
         return self.real_validate()
 
     def real_validate(self):
-        raise NotImplementedError, 'Define `validate` method'
+        '''Inner validate function, without `required` flag check
+        '''
+        raise NotImplementedError, 'Define `real_validate` method'
 
     def safe_validate(self):
         try:
