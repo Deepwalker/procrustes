@@ -1,6 +1,5 @@
 # Procrustes
 from functools import partial
-from sorteddict import sorteddict
 from collections import defaultdict
 
 
@@ -8,7 +7,7 @@ class Procrustes(object):
     def __getattr__(self, validator):
         if validator in register:
             return partial(create_class, validator)
-        raise AttributeError, validator
+        raise AttributeError(validator)
 
 procrustes = Procrustes()
 
@@ -44,15 +43,19 @@ class PBase(object):
         return self.validated_data
 
     def flatten(self, delimiter='__'):
+        '''Make a version of value suitable to use in flat dictionary
+        '''
         yield '', self.validated_data
 
     @classmethod
-    def from_flatten(cls, flatten):
-        if flatten is None:
+    def bulge(cls, flat):
+        '''Return a canonical version of a flat representation of value
+        '''
+        if flat is None:
             return None
         try:
-            return flatten['']
-        except KeyError, TypeError:
+            return flat['']
+        except (KeyError, TypeError):
             return None
 
 
@@ -64,21 +67,19 @@ class PTuple(PBase):
     def real_validate(self):
         data = tuple(self._data)
         if len(self._types) != len(data):
-            raise ValidationError, 'Must be %i elements iterable' % len(self._types)
-        instances = []
-        for t, d in zip(self._types, data):
-            instances.append(t(d, True))
+            raise ValidationError('Must be %i elements iterable'
+                                  % len(self._types))
+        instances = [t(value, True) for t, value in zip(self._types, data)]
         errors = [i.error for i in instances if i.error]
         if errors:
-            raise ValidationError, errors
+            raise ValidationError(errors)
         return instances
 
     @property
     def data(self):
-        if self.validated_data:
-            return tuple(i.data for i in self.validated_data)
-        else:
-            return None
+        if not self.validated_data:
+            return
+        return tuple(i.data for i in self.validated_data)
 
     def flatten(self, delimiter='__'):
         for number, value in enumerate(self.validated_data):
@@ -87,10 +88,10 @@ class PTuple(PBase):
                 yield str(number) + tail, data
 
     @classmethod
-    def from_flatten(cls, flatten, delimiter='__'):
+    def bulge(cls, flat, delimiter='__'):
         i = 0
         collector = []
-        for key, child_flatten in sorted(group_by_key(flatten, delimiter).items()):
+        for key, flatchild in sorted(group_by_key(flat, delimiter).iteritems()):
             try:
                 number = int(key)
             except ValueError:
@@ -99,7 +100,7 @@ class PTuple(PBase):
                 # TODO OMG
                 collector.extend([None] * (number - i))
                 i = number - 1
-            collector.append(cls._types[number].from_flatten(child_flatten))
+            collector.append(cls._types[number].bulge(flatchild))
             i = i + 1
         return collector
 
@@ -113,15 +114,14 @@ class PList(PBase):
         instances = [self._type(i, True) for i in list(self._data)]
         errors = [i.error for i in instances if i.error]
         if errors:
-            raise ValidationError, errors
+            raise ValidationError(errors)
         return instances
 
     @property
     def data(self):
-        if self.validated_data:
-            return [i.data for i in self.validated_data]
-        else:
-            return None
+        if not self.validated_data:
+            return
+        return [i.data for i in self.validated_data]
 
     def flatten(self, delimiter='__'):
         for number, value in enumerate(self.validated_data):
@@ -130,9 +130,9 @@ class PList(PBase):
                 yield str(number) + tail, data
 
     @classmethod
-    def from_flatten(cls, flatten, delimiter='__'):
-        return [cls._type.from_flatten(child_flatten) for child_flatten in 
-                                      group_by_key(flatten, delimiter).values()]
+    def bulge(cls, flat, delimiter='__'):
+        return [cls._type.bulge(flatchild) for flatchild in
+                group_by_key(flat, delimiter).itervalues()]
 
 
 class PDict(PBase):
@@ -142,21 +142,20 @@ class PDict(PBase):
 
     def real_validate(self):
         instances = {}
-        for name, typ in self._named_types.items():
+        for name, typ in self._named_types.iteritems():
             instances[name] = typ(self._data.get(name, None), True)
-        errors = dict((name, value.error) for name, value in instances.items()
-                                                if value.error)
+        errors = dict((name, value.error) for name, value
+                      in instances.iteritems() if value.error)
         if errors:
-            raise ValidationError, errors
+            raise ValidationError(errors)
         return instances
 
     @property
     def data(self):
-        if self.validated_data:
-            return dict((name, value.data) for name, value in 
-                                                    self.validated_data.items())
-        else:
-            return None
+        if not self.validated_data:
+            return
+        return dict((name, value.data) for name, value
+                    in self.validated_data.iteritems())
 
     def flatten(self, delimiter='__'):
         for name, value in self.validated_data.items():
@@ -165,13 +164,13 @@ class PDict(PBase):
                 yield name + tail, data
 
     @classmethod
-    def from_flatten(cls, flatten, delimiter='__'):
+    def bulge(cls, flat, delimiter='__'):
         result = {}
-        grouped = group_by_key(flatten, delimiter)
+        grouped = group_by_key(flat, delimiter)
         for name, ftype in cls._named_types.items():
-            child_flatten = grouped.pop(name, None)
-            result[name] = ftype.from_flatten(child_flatten)
-        #TODO we may have in `grouped` unmatched data
+            flatchild = grouped.pop(name, None)
+            result[name] = ftype.bulge(flatchild)
+        # TODO we may have unmatched data in `grouped`
         return result
 
 
@@ -187,9 +186,9 @@ class PString(PBase):
         slen = len(s)
 
         if self.min_length is not None and slen < self.min_length:
-            raise ValidationError, 'Must be longer then %i' % self.min_length
-        if self.max_length is not None and i > self.max_length:
-            raise ValidationError, 'Must be shorter then %i' % self.max_length
+            raise ValidationError('Must be longer then %i' % self.min_length)
+        if self.max_length is not None and slen > self.max_length:
+            raise ValidationError('Must be shorter then %i' % self.max_length)
 
         return s
 
@@ -203,13 +202,13 @@ class PInteger(PBase):
     def real_validate(self):
         try:
             i = int(self._data)
-        except (ValueError, TypeError) as e:
-            raise ValidationError, 'Must be number, not string'
+        except (ValueError, TypeError):
+            raise ValidationError('Must be number, not a string')
 
         if self.min is not None and i < self.min:
-            raise ValidationError, 'Must be larger then %i' % self.min
+            raise ValidationError('Must be larger then %i' % self.min)
         if self.max is not None and i > self.max:
-            raise ValidationError, 'Must be smaller then %i' % self.max
+            raise ValidationError('Must be smaller then %i' % self.max)
 
         return i
 
@@ -232,16 +231,16 @@ def create_class(validator, *args, **kwargs):
     return new_cls
 
 
-def group_by_key(flatten, delimiter='__'):
-    def split_key(flatten):
-        for key, value in sorted(flatten.items()):
+def group_by_key(flat, delimiter='__'):
+    def split_key(flat):
+        for key, value in sorted(flat.iteritems()):
             keys = key.split(delimiter, 1)
             base_key = keys[0]
-            child_key = keys[1] if len(keys)==2 else ''
+            child_key = keys[1] if len(keys) == 2 else ''
             yield base_key, child_key, value
 
-    collector = defaultdict(lambda: {})
-    for key, child_key, value in split_key(flatten):
+    collector = defaultdict(dict)
+    for key, child_key, value in split_key(flat):
         collector[key][child_key] = value
     return collector
 
@@ -263,9 +262,9 @@ if __name__ == '__main__':
     PT = procrustes.Tuple(I, S, I)
     pt = PT([10, 'sdfsdf', 30])
     print 'Tuple:', pt.data, pt.error
-    flatten = dict(pt.flatten())
-    print 'Flatten:', flatten
-    print 'Unflatten:', PT.from_flatten(flatten)
+    flat = dict(pt.flatten())
+    print 'Flatten:', flat
+    print 'Unflatten:', PT.bulge(flat)
 
     pl = PL(xrange(10))
     print 'List:', pl.data, pl.error
@@ -283,10 +282,11 @@ if __name__ == '__main__':
     PT = procrustes.Tuple(I, S, PD)
     pt = PT((9, '234234', {'a': 34, 'b': 'sdfsdf', 'c': xrange(3)} ))
     print 'All:', pt.data, pt.error
-    flatten = dict(pt.flatten())
-    print 'Flatten:', flatten
-    flatten = {'2__b': 'sdfsdf', '2__c__0': 0, '2__c__1': 1, '2__c__2': 2, '1': '234234', '0': 9}
-    print 'Unflatten:', PT.from_flatten(flatten)
+    flat = dict(pt.flatten())
+    print 'Flatten:', flat
+    flat = {'2__b': 'sdfsdf', '2__c__0': 0, '2__c__1': 1, '2__c__2': 2,
+               '1': '234234', '0': 9}
+    print 'Unflatten:', PT.bulge(flat)
 
-    pt = PT(PT.from_flatten(flatten))
+    pt = PT(PT.bulge(flat))
     print 'All:', pt.data, pt.error
