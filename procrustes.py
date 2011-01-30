@@ -1,13 +1,20 @@
-# Procrustes
+# (c) Svarga project under terms of the new BSD license
+
 from functools import partial
 from collections import defaultdict
 
 
 class Procrustes(object):
+    def __init__(self):
+        self.validators = {}
+
     def __getattr__(self, validator):
-        if validator in register:
+        if validator in self.validators:
             return partial(create_class, validator)
         raise AttributeError(validator)
+
+    def register(self, name, cls):
+        self.validators[name] = cls
 
 procrustes = Procrustes()
 
@@ -213,18 +220,19 @@ class PInteger(PBase):
         return i
 
 
-register = {
+for name, validator in {
     'Tuple': PTuple,
     'List': PList,
     'Dict': PDict,
     'String': PString,
     'Integer': PInteger,
-    }
+    }.iteritems():
+    procrustes.register(name, validator)
 
 
 # Helpers
 def create_class(validator, *args, **kwargs):
-    cls = register[validator]
+    cls = procrustes.validators[validator]
     new_cls = type('Pc' + validator, (cls, ), {})
     new_cls.required = kwargs.pop('required', True)
     cls.configure(new_cls, *args, **kwargs)
