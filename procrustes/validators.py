@@ -19,7 +19,7 @@ class Procrustes(object):
 procrustes = Procrustes()
 
 
-class PBase(object):
+class Base(object):
     def __init__(self, data, validate=True):
         self.raw_data = data
         self.validated_data = None
@@ -70,7 +70,7 @@ class PBase(object):
             return None
 
 
-class PTuple(PBase):
+class Tuple(Base):
     @staticmethod
     def configure(cls, *types):
         cls.types = types
@@ -116,7 +116,7 @@ class PTuple(PBase):
         return tuple(collector)
 
 
-class PList(PBase):
+class List(Base):
     @staticmethod
     def configure(cls, type):
         cls.type = type
@@ -146,7 +146,7 @@ class PList(PBase):
                 group_by_key(flat, delimiter).itervalues()]
 
 
-class PDict(PBase):
+class Dict(Base):
     @staticmethod
     def configure(cls, named_types):
         cls.named_types = named_types
@@ -185,7 +185,7 @@ class PDict(PBase):
         return result
 
 
-class PString(PBase):
+class String(Base):
     @staticmethod
     def configure(cls, min_length=None, max_length=None, regex=None):
         cls.min_length = min_length
@@ -204,7 +204,7 @@ class PString(PBase):
         return s
 
 
-class PInteger(PBase):
+class Integer(Base):
     @staticmethod
     def configure(cls, min=None, max=None):
         cls.min = min
@@ -225,11 +225,11 @@ class PInteger(PBase):
 
 
 for name, validator in {
-    'Tuple': PTuple,
-    'List': PList,
-    'Dict': PDict,
-    'String': PString,
-    'Integer': PInteger,
+    'Tuple': Tuple,
+    'List': List,
+    'Dict': Dict,
+    'String': String,
+    'Integer': Integer,
     }.iteritems():
     procrustes.register(name, validator)
 
@@ -263,42 +263,5 @@ class ValidationError(Exception):
 
 
 if __name__ == '__main__':
-    I = procrustes.Integer(max=90, required=False)
-    S = procrustes.String()
-    I(10).validate()
-    I(100).safe_validate()
-    S('kuku').validate()
-    S('keke').safe_validate()
-
-    PL = procrustes.List(I)
-    PT = procrustes.Tuple(I, S, I)
-    pt = PT([10, 'sdfsdf', 30])
-    print 'Tuple:', pt.data, pt.error
-    flat = dict(pt.flatten())
-    print 'Flatten:', flat
-    print 'Unflatten:', PT.deepen(flat)
-
-    pl = PL(xrange(10))
-    print 'List:', pl.data, pl.error
-
-    PT = procrustes.Tuple(I, S, PL)
-    pt = PT((9, '234234', xrange(3)))
-    print 'Tuple and List:', pt.data, pt.error
-    print dict(pt.flatten())
-
-    PD = procrustes.Dict({'a': I, 'b': S, 'c': PL})
-    pd = PD({'a': 34, 'b': 'sdfsdf', 'c': xrange(3)})
-    print 'Dict and List:', pd.data, pd.error
-    print dict(pd.flatten())
-
-    PT = procrustes.Tuple(I, S, PD)
-    pt = PT((9, '234234', {'a': 34, 'b': 'sdfsdf', 'c': xrange(3)} ))
-    print 'All:', pt.data, pt.error
-    flat = dict(pt.flatten())
-    print 'Flatten:', flat
-    flat = {'2__b': 'sdfsdf', '2__c__0': 0, '2__c__1': 1, '2__c__2': 2,
-               '1': '234234', '0': 9}
-    print 'Unflatten:', PT.deepen(flat)
-
-    pt = PT(PT.deepen(flat))
-    print 'All:', pt.data, pt.error
+    from procrustes import tests
+    tests.p.run()
