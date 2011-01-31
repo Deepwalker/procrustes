@@ -218,6 +218,7 @@ class DeclarativeMeta(type):
                 fields[name] = attr
                 del attrs[name]
         attrs['named_types'] = fields
+        attrs['required'] = attrs.get('required', True)
         return type.__new__(cls, name, bases, attrs)
 
 

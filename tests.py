@@ -70,7 +70,7 @@ def declarative():
     class Simple(procrustes.Declarative):
         name = procrustes.String()
 
-    simple({'name': 'test'})
+    simple = Simple({'name': 'test'})
     Assert(simple.data) == {'name': 'test'}
 
 if __name__ == '__main__':
