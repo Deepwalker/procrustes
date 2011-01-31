@@ -59,7 +59,7 @@ class PBase(object):
         yield '', self.validated_data
 
     @classmethod
-    def bulge(cls, flat):
+    def deepen(cls, flat):
         '''Return a canonical version of a flat representation of value
         '''
         if flat is None:
@@ -99,7 +99,7 @@ class PTuple(PBase):
                 yield str(number) + tail, data
 
     @classmethod
-    def bulge(cls, flat, delimiter='__'):
+    def deepen(cls, flat, delimiter='__'):
         i = 0
         collector = []
         for key, flatchild in sorted(group_by_key(flat, delimiter).iteritems()):
@@ -111,7 +111,7 @@ class PTuple(PBase):
                 # TODO OMG
                 collector.extend([None] * (number - i))
                 i = number - 1
-            collector.append(cls.types[number].bulge(flatchild))
+            collector.append(cls.types[number].deepen(flatchild))
             i = i + 1
         return tuple(collector)
 
@@ -141,8 +141,8 @@ class PList(PBase):
                 yield str(number) + tail, data
 
     @classmethod
-    def bulge(cls, flat, delimiter='__'):
-        return [cls.type.bulge(flatchild) for flatchild in
+    def deepen(cls, flat, delimiter='__'):
+        return [cls.type.deepen(flatchild) for flatchild in
                 group_by_key(flat, delimiter).itervalues()]
 
 
@@ -175,12 +175,12 @@ class PDict(PBase):
                 yield name + tail, data
 
     @classmethod
-    def bulge(cls, flat, delimiter='__'):
+    def deepen(cls, flat, delimiter='__'):
         result = {}
         grouped = group_by_key(flat, delimiter)
         for name, ftype in cls.named_types.items():
             flatchild = grouped.pop(name, None)
-            result[name] = ftype.bulge(flatchild)
+            result[name] = ftype.deepen(flatchild)
         # TODO we may have unmatched data in `grouped`
         return result
 
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     print 'Tuple:', pt.data, pt.error
     flat = dict(pt.flatten())
     print 'Flatten:', flat
-    print 'Unflatten:', PT.bulge(flat)
+    print 'Unflatten:', PT.deepen(flat)
 
     pl = PL(xrange(10))
     print 'List:', pl.data, pl.error
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     print 'Flatten:', flat
     flat = {'2__b': 'sdfsdf', '2__c__0': 0, '2__c__1': 1, '2__c__2': 2,
                '1': '234234', '0': 9}
-    print 'Unflatten:', PT.bulge(flat)
+    print 'Unflatten:', PT.deepen(flat)
 
-    pt = PT(PT.bulge(flat))
+    pt = PT(PT.deepen(flat))
     print 'All:', pt.data, pt.error

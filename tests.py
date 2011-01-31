@@ -48,16 +48,16 @@ def tuple_dict():
     Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', 90), 'b': 'kuku'}
 
 @p.test
-def flat_bulge():
+def flat_deepen():
     PT = procrustes.Tuple(I, S, I)
     PD = procrustes.Dict({'a': I, 'b': S, 'c': PT})
     pd = PD({'b': 'kuku', 'c': (None, 'Lorem', 78)})
-    flatten = dict(pd.flatten())
-    Assert(flatten) == {'a': None, 'c__2': 78, 'c__1': 'Lorem',
+    flat = dict(pd.flatten())
+    Assert(flat) == {'a': None, 'c__2': 78, 'c__1': 'Lorem',
                                                       'c__0': None, 'b': 'kuku'}
-    bulged = PD.bulge(flatten)
-    Assert(bulged) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
-    pd = PD(bulged)
+    deep = PD.deepen(flat)
+    Assert(deep) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
+    pd = PD(deep)
     Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
 
 
