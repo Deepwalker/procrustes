@@ -1,22 +1,6 @@
 # (c) Svarga project under terms of the new BSD license
 
-from functools import partial
 from collections import defaultdict
-
-
-class Procrustes(object):
-    def __init__(self):
-        self.validators = {}
-
-    def __getattr__(self, validator):
-        if validator in self.validators:
-            return partial(create_class, validator)
-        raise AttributeError(validator)
-
-    def register(self, name, cls):
-        self.validators[name] = cls
-
-procrustes = Procrustes()
 
 
 class Base(object):
@@ -224,25 +208,7 @@ class Integer(Base):
         return i
 
 
-for name, validator in {
-    'Tuple': Tuple,
-    'List': List,
-    'Dict': Dict,
-    'String': String,
-    'Integer': Integer,
-    }.iteritems():
-    procrustes.register(name, validator)
-
-
 # Helpers
-def create_class(validator, *args, **kwargs):
-    cls = procrustes.validators[validator]
-    new_cls = type('Pc' + validator, (cls, ), {})
-    new_cls.required = kwargs.pop('required', True)
-    cls.configure(new_cls, *args, **kwargs)
-    return new_cls
-
-
 def group_by_key(flat, delimiter='__'):
     def split_key(flat):
         for key, value in sorted(flat.iteritems()):

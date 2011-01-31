@@ -15,18 +15,21 @@ def simple():
     Assert(I(10).validate()) == 10
     Assert(I(None).validate()) == None
 
+
 @p.test
 def simple_tuple():
     """Simple tuple ops"""
     PT = procrustes.Tuple(I, S, I)
     pt = PT([10, 'sdfsdf', 30])
     Assert(pt.data) == (10, 'sdfsdf', 30)
-    
+
+
 @p.test
 def simple_list():
     PL = procrustes.List(I)
     pl = PL(xrange(7))
     Assert(pl.data) == range(7)
+
 
 @p.test
 def simple_dict():
@@ -54,7 +57,7 @@ def flat_deepen():
     pd = PD({'b': 'kuku', 'c': (None, 'Lorem', 78)})
     flat = dict(pd.flatten())
     Assert(flat) == {'a': None, 'c__2': 78, 'c__1': 'Lorem',
-                                                      'c__0': None, 'b': 'kuku'}
+                     'c__0': None, 'b': 'kuku'}
     deep = PD.deepen(flat)
     Assert(deep) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
     pd = PD(deep)
