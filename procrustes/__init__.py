@@ -19,6 +19,8 @@ class Procrustes(object):
     def register(self, name, cls):
         self.validators[name] = cls
 
+    Declarative = validators.Declarative
+
 
 def create_class(validator, *args, **kwargs):
     cls = procrustes.validators[validator]

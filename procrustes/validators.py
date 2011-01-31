@@ -208,6 +208,27 @@ class Integer(Base):
         return i
 
 
+# nice declarativeness
+class DeclarativeMeta(type):
+    def __new__(cls, name, bases, attrs):
+        fields = {}
+        for name, attr in list(attrs.iteritems()): # explicit copy
+            # isinstance(attr, type) == attr is a class
+            if isinstance(attr, type) and issubclass(attr, Base):
+                fields[name] = attr
+                del attrs[name]
+        attrs['named_types'] = fields
+        return type.__new__(cls, name, bases, attrs)
+
+
+class Declarative(Dict):
+    __metaclass__ = DeclarativeMeta
+
+    @classmethod
+    def configure(cls):
+        pass
+
+
 # Helpers
 def group_by_key(flat, delimiter='__'):
     def split_key(flat):

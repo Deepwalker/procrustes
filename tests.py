@@ -50,6 +50,7 @@ def tuple_dict():
     pd = PD({'b': 'kuku', 'c': (None, 'Lorem', 90)})
     Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', 90), 'b': 'kuku'}
 
+
 @p.test
 def flat_deepen():
     PT = procrustes.Tuple(I, S, I)
@@ -63,6 +64,14 @@ def flat_deepen():
     pd = PD(deep)
     Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
 
+
+@p.test
+def declarative():
+    class Simple(procrustes.Declarative):
+        name = procrustes.String()
+
+    simple({'name': 'test'})
+    Assert(simple.data) == {'name': 'test'}
 
 if __name__ == '__main__':
     p.run()
