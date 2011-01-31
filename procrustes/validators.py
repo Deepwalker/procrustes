@@ -181,9 +181,9 @@ class String(Base):
         slen = len(s)
 
         if self.min_length is not None and slen < self.min_length:
-            raise ValidationError('Must be longer then %i' % self.min_length)
+            raise ValidationError('Must be longer than %i' % self.min_length)
         if self.max_length is not None and slen > self.max_length:
-            raise ValidationError('Must be shorter then %i' % self.max_length)
+            raise ValidationError('Must be shorter than %i' % self.max_length)
 
         return s
 
@@ -201,9 +201,9 @@ class Integer(Base):
             raise ValidationError('Must be number, not a string')
 
         if self.min is not None and i < self.min:
-            raise ValidationError('Must be larger then %i' % self.min)
+            raise ValidationError('Must be larger than %i' % self.min)
         if self.max is not None and i > self.max:
-            raise ValidationError('Must be smaller then %i' % self.max)
+            raise ValidationError('Must be smaller than %i' % self.max)
 
         return i
 

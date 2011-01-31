@@ -68,10 +68,15 @@ def flat_deepen():
 @p.test
 def declarative():
     class Simple(procrustes.Declarative):
-        name = procrustes.String()
+        name = procrustes.String(max_length=5)
 
     simple = Simple({'name': 'test'})
     Assert(simple.data) == {'name': 'test'}
+
+    fail = Simple({'name': 'qweasd'})
+    Assert(fail.data) == None
+    Assert(fail.error) == {'name': 'Must be shorter than 5'}
+
 
 if __name__ == '__main__':
     p.run()
