@@ -11,7 +11,7 @@ class Base(object):
         if validate:
             self.safe_validate()
 
-    @staticmethod
+    @classmethod
     def configure(cls, *args, **kwargs):
         raise NotImplementedError('Define `configure` method')
 
@@ -55,7 +55,7 @@ class Base(object):
 
 
 class Tuple(Base):
-    @staticmethod
+    @classmethod
     def configure(cls, *types):
         cls.types = types
 
@@ -101,7 +101,7 @@ class Tuple(Base):
 
 
 class List(Base):
-    @staticmethod
+    @classmethod
     def configure(cls, type):
         cls.type = type
 
@@ -131,7 +131,7 @@ class List(Base):
 
 
 class Dict(Base):
-    @staticmethod
+    @classmethod
     def configure(cls, named_types):
         cls.named_types = named_types
 
@@ -170,7 +170,7 @@ class Dict(Base):
 
 
 class String(Base):
-    @staticmethod
+    @classmethod
     def configure(cls, min_length=None, max_length=None, regex=None):
         cls.min_length = min_length
         cls.max_length = max_length
@@ -189,7 +189,7 @@ class String(Base):
 
 
 class Integer(Base):
-    @staticmethod
+    @classmethod
     def configure(cls, min=None, max=None):
         cls.min = min
         cls.max = max

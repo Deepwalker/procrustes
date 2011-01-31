@@ -24,7 +24,7 @@ def create_class(validator, *args, **kwargs):
     cls = procrustes.validators[validator]
     new_cls = type('Pc' + validator, (cls, ), {})
     new_cls.required = kwargs.pop('required', True)
-    cls.configure(new_cls, *args, **kwargs)
+    new_cls.configure(*args, **kwargs)
     return new_cls
 
 
