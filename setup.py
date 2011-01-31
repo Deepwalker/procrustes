@@ -27,6 +27,9 @@ setupconf = dict(
 
     packages = find_packages(),
 
+    test_loader = 'attest:Loader',
+    test_suite = 'tests.p',
+
     classifiers = [
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
