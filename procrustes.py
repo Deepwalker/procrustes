@@ -29,7 +29,7 @@ class PBase(object):
 
     @staticmethod
     def configure(cls, *args, **kwargs):
-        raise NotImplementedError, 'Define `configure` method'
+        raise NotImplementedError('Define `configure` method')
 
     def validate(self):
         '''Validate data and return it
@@ -41,7 +41,7 @@ class PBase(object):
     def real_validate(self):
         '''Inner validate function, without `required` flag check
         '''
-        raise NotImplementedError, 'Define `real_validate` method'
+        raise NotImplementedError('Define `real_validate` method')
 
     def safe_validate(self):
         try:
