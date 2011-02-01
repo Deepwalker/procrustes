@@ -59,6 +59,7 @@ def flat_deepen():
     flat = dict(pd.flatten())
     Assert(flat) == {'a': None, 'c__2': 78, 'c__1': 'Lorem',
                      'c__0': None, 'b': 'kuku'}
+    flat = {'a': None, 'c__2': 78, 'c__1': 'Lorem', 'b': 'kuku'}
     deep = PD.deepen(flat)
     Assert(deep) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
     pd = PD(deep)

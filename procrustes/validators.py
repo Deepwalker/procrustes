@@ -94,7 +94,7 @@ class Tuple(Base):
             if i < number:
                 # TODO OMG
                 collector.extend([None] * (number - i))
-                i = number - 1
+                i = number
             collector.append(cls.types[number].deepen(flatchild))
             i = i + 1
         return tuple(collector)
