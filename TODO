@@ -1,0 +1,7 @@
+TODO list
+=========
+
+* Add more validators
+* Decorator `validate` for sugar and validation function output
+* Implement regex in String validator
+* Slot for custom validation
