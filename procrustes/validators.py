@@ -1,5 +1,6 @@
 # (c) Svarga project under terms of the new BSD license
 
+from procrustes.register import procrustes
 from collections import defaultdict
 
 
@@ -54,6 +55,7 @@ class Base(object):
             return None
 
 
+@procrustes.register()
 class Tuple(Base):
     @classmethod
     def configure(cls, *types):
@@ -100,6 +102,7 @@ class Tuple(Base):
         return tuple(collector)
 
 
+@procrustes.register()
 class List(Base):
     @classmethod
     def configure(cls, type):
@@ -130,6 +133,7 @@ class List(Base):
                 group_by_key(flat, delimiter).itervalues()]
 
 
+@procrustes.register()
 class Dict(Base):
     @classmethod
     def configure(cls, named_types):
@@ -169,6 +173,7 @@ class Dict(Base):
         return result
 
 
+@procrustes.register()
 class String(Base):
     @classmethod
     def configure(cls, min_length=None, max_length=None, regex=None):
@@ -188,6 +193,7 @@ class String(Base):
         return s
 
 
+@procrustes.register()
 class Integer(Base):
     @classmethod
     def configure(cls, min=None, max=None):
@@ -248,8 +254,3 @@ def group_by_key(flat, delimiter='__'):
 # Exceptions
 class ValidationError(Exception):
     pass
-
-
-if __name__ == '__main__':
-    from procrustes import tests
-    tests.p.run()
