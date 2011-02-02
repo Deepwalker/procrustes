@@ -1,7 +1,7 @@
 # (c) Svarga project under terms of the new BSD license
 
 from procrustes.register import procrustes
-from collections import defaultdict
+from collections import defaultdict, Iterable
 
 
 class Base(object):
@@ -62,6 +62,8 @@ class Tuple(Base):
         cls.types = types
 
     def real_validate(self):
+        if not isinstance(self.raw_data, Iterable):
+            raise ValidationError('Must be iterable')
         data = tuple(self.raw_data)
         if len(self.types) != len(data):
             raise ValidationError('Must be iterable of length %i'
@@ -79,7 +81,11 @@ class Tuple(Base):
         return tuple(i.data for i in self.validated_data)
 
     def flatten(self, delimiter='__'):
-        for number, value in enumerate(self.validated_data):
+        if not self.validated_data:
+            data = (value(None) for value in self.types)
+        else:
+            data = self.validated_data
+        for number, value in enumerate(data):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
@@ -109,7 +115,9 @@ class List(Base):
         cls.type = type
 
     def real_validate(self):
-        instances = [self.type(i, True) for i in list(self.raw_data)]
+        if not isinstance(self.raw_data, Iterable):
+            raise ValidationError('Must be iterable')
+        instances = [self.type(i, True) for i in self.raw_data]
         errors = [i.error for i in instances if i.error]
         if errors:
             raise ValidationError(errors)
@@ -122,7 +130,11 @@ class List(Base):
         return [i.data for i in self.validated_data]
 
     def flatten(self, delimiter='__'):
-        for number, value in enumerate(self.validated_data):
+        if not self.validated_data:
+            data = [self.type(None)]
+        else:
+            data = self.validated_data
+        for number, value in enumerate(data):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
@@ -140,6 +152,8 @@ class Dict(Base):
         cls.named_types = named_types
 
     def real_validate(self):
+        if not isinstance(self.raw_data, dict):
+            raise ValidationError('Value must be dict')
         instances = {}
         for name, typ in self.named_types.iteritems():
             instances[name] = typ(self.raw_data.get(name, None), True)
@@ -157,7 +171,12 @@ class Dict(Base):
                     in self.validated_data.iteritems())
 
     def flatten(self, delimiter='__'):
-        for name, value in self.validated_data.items():
+        if not self.validated_data:
+            data = dict((name, typ(None)) for name, typ 
+                                in self.named_types.iteritems())
+        else:
+            data = self.validated_data
+        for name, value in data.iteritems():
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield name + tail, data
@@ -182,15 +201,16 @@ class String(Base):
         cls.regex = regex
 
     def real_validate(self):
-        s = str(self.raw_data)
-        slen = len(s)
+        if not isinstance(self.raw_data, (str, unicode)):
+            raise ValidationError('Must be str or unicode instance')
+        slen = len(self.raw_data)
 
         if self.min_length is not None and slen < self.min_length:
             raise ValidationError('Must be longer than %i' % self.min_length)
         if self.max_length is not None and slen > self.max_length:
             raise ValidationError('Must be shorter than %i' % self.max_length)
 
-        return s
+        return self.raw_data
 
 
 @procrustes.register()

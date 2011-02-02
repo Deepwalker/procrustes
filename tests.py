@@ -65,6 +65,17 @@ def flat_deepen():
     pd = PD(deep)
     Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', 78), 'b': 'kuku'}
 
+@p.test
+def empty_flatten():
+    I = procrustes.Integer(max=90, required=False)
+    S = procrustes.String()
+    PL = procrustes.List(I)
+    PD = procrustes.Dict({'a': I, 'b': S})
+    PT = procrustes.Tuple(I, S, I, PL, PD)
+
+    Assert(dict(PT(None).flatten())) == {'4__b': None, '4__a': None, '1': None,
+                                            '0': None, '2': None, '3__0': None}
+
 
 @p.test
 def declarative():
