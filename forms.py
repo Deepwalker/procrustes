@@ -51,13 +51,32 @@ class FieldMixin(object):
         yield self.widget(data=self.data, id=id)
 
 
-@forms.register()
-class Tuple(FieldMixin, validators.Tuple):
+class IterableMixin(object):
     def widgets(self, id=''):
         prefix = id + '__' if id else ''
         data = self.get_included()
         for num, field in enumerate(data):
             for widget in field.widgets(prefix + str(num)):
+                yield widget
+
+
+@forms.register()
+class Tuple(IterableMixin, FieldMixin, validators.Tuple):
+    pass
+
+
+@forms.register()
+class List(IterableMixin, FieldMixin, validators.List):
+    pass
+
+
+@forms.register()
+class Dict(FieldMixin, validators.Dict):
+    def widgets(self, id=''):
+        prefix = id + '__' if id else ''
+        data = self.get_included()
+        for name, field in data.iteritems():
+            for widget in field.widgets(prefix + name):
                 yield widget
 
 
@@ -91,13 +110,33 @@ if __name__ == '__main__':
         Assert(str.data) == 'kukuku'
 
         FT = forms.Tuple(forms.String(), forms.String())
+        FL = forms.List(forms.String())
         ft = FT(None)
         widgets = [widget.render() for widget in ft.widgets()]
         Assert(widgets) == ['<input id="0" value="">', '<input id="1" value="">']
 
         ft = FT(('kuku', 'kuku'))
         widgets = [widget.render() for widget in ft.widgets('form')]
-        Assert(widgets) == ['<input id="form__0" value="kuku">', '<input id="form__1" value="kuku">']
+        Assert(widgets) == ['<input id="form__0" value="kuku">',
+                            '<input id="form__1" value="kuku">']
         #Assert(str.render('strid')) == '<input id="strid" value="kukuku">'
+        fl = FL(['kuku', 'dsfasfd', 'xcvxczvx'])
+        widgets = [widget.render() for widget in fl.widgets('form')]
+        Assert(widgets) == ['<input id="form__0" value="kuku">',
+                            '<input id="form__1" value="dsfasfd">',
+                            '<input id="form__2" value="xcvxczvx">']
+
+    @p.test
+    def dict_field():
+        FD = forms.Dict({'a': forms.String(), 'b': forms.String()})
+        fd = FD(None)
+        widgets = [widget.render() for widget in fd.widgets('form')]
+        Assert(widgets) == ['<input id="form__a" value="">',
+                            '<input id="form__b" value="">']
+
+        fd = FD({'a': 'kuku', 'b': 'may-may'})
+        widgets = [widget.render() for widget in fd.widgets('form')]
+        Assert(widgets) == ['<input id="form__a" value="kuku">',
+                            '<input id="form__b" value="may-may">']
 
     p.run()
