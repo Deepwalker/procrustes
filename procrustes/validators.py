@@ -80,11 +80,13 @@ class Tuple(Base):
             return
         return tuple(i.data for i in self.validated_data)
 
-    def flatten(self, delimiter='__'):
+    def get_included(self):
         if not self.validated_data:
-            data = (value(None) for value in self.types)
-        else:
-            data = self.validated_data
+            return (value(None) for value in self.types)
+        return self.validated_data
+
+    def flatten(self, delimiter='__'):
+        data = self.get_included()
         for number, value in enumerate(data):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
@@ -129,11 +131,13 @@ class List(Base):
             return
         return [i.data for i in self.validated_data]
 
-    def flatten(self, delimiter='__'):
+    def get_included(self):
         if not self.validated_data:
-            data = [self.type(None)]
-        else:
-            data = self.validated_data
+            return [self.type(None)]
+        return self.validated_data
+
+    def flatten(self, delimiter='__'):
+        data = self.get_included()
         for number, value in enumerate(data):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
@@ -170,12 +174,14 @@ class Dict(Base):
         return dict((name, value.data) for name, value
                     in self.validated_data.iteritems())
 
-    def flatten(self, delimiter='__'):
+    def get_included(self):
         if not self.validated_data:
-            data = dict((name, typ(None)) for name, typ 
+            return dict((name, typ(None)) for name, typ 
                                 in self.named_types.iteritems())
-        else:
-            data = self.validated_data
+        return self.validated_data
+
+    def flatten(self, delimiter='__'):
+        data = self.get_included()
         for name, value in data.iteritems():
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
