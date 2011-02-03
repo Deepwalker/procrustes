@@ -1,0 +1,10 @@
+<h1>Form test</h1>
+<div>
+    <form method="post">
+        <p>{{ form.error }}</p>
+        {% for widget in form.widgets() %}
+        <p>{{ widget.label()|safe }} {{ widget.render()|safe }}</p>
+        {% endfor %}
+        <input type="submit">
+    </form>
+</div>
