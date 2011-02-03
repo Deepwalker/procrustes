@@ -99,31 +99,32 @@ def forms_simple():
     FL = forms.List(forms.String())
     ft = FT(None)
     widgets = [widget.render() for widget in ft.widgets()]
-    Assert(widgets) == ['<input id="form__0" value="">', '<input id="form__1" value="">']
+    Assert(widgets) == ['<input id="form__0" name="form__0" value="">',
+                        '<input id="form__1" name="form__1" value="">']
 
     ft = FT(('kuku', 'kuku'))
     widgets = [widget.render() for widget in ft.widgets()]
-    Assert(widgets) == ['<input id="form__0" value="kuku">',
-                        '<input id="form__1" value="kuku">']
+    Assert(widgets) == ['<input id="form__0" name="form__0" value="kuku">',
+                        '<input id="form__1" name="form__1" value="kuku">']
     #Assert(str.render('strid')) == '<input id="strid" value="kukuku">'
     fl = FL(['kuku', 'dsfasfd', 'xcvxczvx'])
     widgets = [widget.render() for widget in fl.widgets()]
-    Assert(widgets) == ['<input id="form__0" value="kuku">',
-                        '<input id="form__1" value="dsfasfd">',
-                        '<input id="form__2" value="xcvxczvx">']
+    Assert(widgets) == ['<input id="form__0" name="form__0" value="kuku">',
+                        '<input id="form__1" name="form__1" value="dsfasfd">',
+                        '<input id="form__2" name="form__2" value="xcvxczvx">']
 
 @p.test
 def forms_dict_field():
     FD = forms.Dict({'a': forms.String(), 'b': forms.String()})
     fd = FD(None)
     widgets = [widget.render() for widget in fd.widgets()]
-    Assert(widgets) == ['<input id="form__a" value="">',
-                        '<input id="form__b" value="">']
+    Assert(widgets) == ['<input id="form__a" name="form__a" value="">',
+                        '<input id="form__b" name="form__b" value="">']
 
     fd = FD({'a': 'kuku', 'b': 'may-may'})
     widgets = [widget.render() for widget in fd.widgets()]
-    Assert(widgets) == ['<input id="form__a" value="kuku">',
-                        '<input id="form__b" value="may-may">']
+    Assert(widgets) == ['<input id="form__a" name="form__a" value="kuku">',
+                        '<input id="form__b" name="form__b" value="may-may">']
 
 @p.test
 def forms_flat():
@@ -134,10 +135,10 @@ def forms_flat():
     Assert(unflat) == {'a': 'kuku', 'b': 'may-may', 'c': ['kuku', 'wer']}
     fd = FD(unflat)
     widgets = [widget.render() for widget in fd.widgets()]
-    Assert(widgets) == ['<input id="form__a" value="kuku">',
-                        '<input id="form__c__0" value="kuku">',
-                        '<input id="form__c__1" value="wer">',
-                        '<input id="form__b" value="may-may">']
+    Assert(widgets) == ['<input id="form__a" name="form__a" value="kuku">',
+                        '<input id="form__c__0" name="form__c__0" value="kuku">',
+                        '<input id="form__c__1" name="form__c__1" value="wer">',
+                        '<input id="form__b" name="form__b" value="may-may">']
 
 
 if __name__ == '__main__':

@@ -37,6 +37,7 @@ def create_field(field, *args, **kwargs):
     return new_cls
 
 
+# Fields
 class FieldMixin(object):
     @classmethod
     def base_field_configure(cls, *args, **kwargs):
@@ -56,6 +57,12 @@ class FieldMixin(object):
         pos = len(self.prefix) + 2
         flat = dict((key[pos:], value) for key, value in flat.iteritems())
         return self.deepen(flat)
+
+    def is_valid(self):
+        self.raw_data = self.unflat(self.raw_data)
+        self.safe_validate()
+        if not self.error:
+            return True
 
 
 class IterableMixin(object):
@@ -97,11 +104,25 @@ class Integer(FieldMixin, validators.Integer):
     pass
 
 
+# Declarative
+class DeclarativeFieldMeta(validators.DeclarativeMeta):
+    def __new__(cls, name, bases, attrs):
+        attrs['prefix'] = attrs.get('prefix', 'form')
+        return validators.DeclarativeMeta.__new__(cls, name, bases, attrs)
+
+
+class Declarative(Dict):
+    __metaclass__ = DeclarativeFieldMeta
+
+forms.Declarative = Declarative
+
+# Widgets
 class BaseWidget(object):
     def __init__(self, **kwargs):
         self.data = kwargs.pop('data', None)
         self.prefix = kwargs.pop('prefix', 'form')
         self.id = kwargs.pop('id')
+        self.label_name = kwargs.pop('label_name', self.id)
         self.attrs = kwargs
 
     def render(self):
@@ -110,61 +131,10 @@ class BaseWidget(object):
                                                 in self.attrs.iteritems())
         if attrs:
             attrs += ' '
-        return '<input id="%s__%s" %svalue="%s">' % (self.prefix, self.id, attrs, data)
+        name = self.prefix + '__' + self.id
+        return '<input id="{0}" name="{0}" {1}value="{2}">'.format(name, attrs, data)
 
+    def label(self):
+        name = self.prefix + '__' + self.id
+        return '<label for="%s">%s</label>' % (name, self.label_name)
 
-if __name__ == '__main__':
-    from attest import Tests, Assert
-    p = Tests()
-
-    @p.test
-    def simple():
-        str = forms.String()('kukuku')
-        Assert(str.data) == 'kukuku'
-
-        FT = forms.Tuple(forms.String(), forms.String())
-        FL = forms.List(forms.String())
-        ft = FT(None)
-        widgets = [widget.render() for widget in ft.widgets()]
-        Assert(widgets) == ['<input id="form__0" value="">', '<input id="form__1" value="">']
-
-        ft = FT(('kuku', 'kuku'))
-        widgets = [widget.render() for widget in ft.widgets()]
-        Assert(widgets) == ['<input id="form__0" value="kuku">',
-                            '<input id="form__1" value="kuku">']
-        #Assert(str.render('strid')) == '<input id="strid" value="kukuku">'
-        fl = FL(['kuku', 'dsfasfd', 'xcvxczvx'])
-        widgets = [widget.render() for widget in fl.widgets()]
-        Assert(widgets) == ['<input id="form__0" value="kuku">',
-                            '<input id="form__1" value="dsfasfd">',
-                            '<input id="form__2" value="xcvxczvx">']
-
-    @p.test
-    def dict_field():
-        FD = forms.Dict({'a': forms.String(), 'b': forms.String()})
-        fd = FD(None)
-        widgets = [widget.render() for widget in fd.widgets()]
-        Assert(widgets) == ['<input id="form__a" value="">',
-                            '<input id="form__b" value="">']
-
-        fd = FD({'a': 'kuku', 'b': 'may-may'})
-        widgets = [widget.render() for widget in fd.widgets()]
-        Assert(widgets) == ['<input id="form__a" value="kuku">',
-                            '<input id="form__b" value="may-may">']
-    
-    @p.test
-    def flat():
-        FL = forms.List(forms.String())
-        FD = forms.Dict({'a': forms.String(), 'b': forms.String(), 'c': FL})
-        flat = {'form__a': 'kuku', 'form__b': 'may-may', 'form__c__0': 'wer', 'form__c__1': 'kuku'}
-        unflat = FD.unflat(flat)
-        Assert(unflat) == {'a': 'kuku', 'b': 'may-may', 'c': ['kuku', 'wer']}
-        fd = FD(unflat)
-        widgets = [widget.render() for widget in fd.widgets()]
-        Assert(widgets) == ['<input id="form__a" value="kuku">',
-                            '<input id="form__c__0" value="kuku">',
-                            '<input id="form__c__1" value="wer">',
-                            '<input id="form__b" value="may-may">']
-
-
-    p.run()
