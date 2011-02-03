@@ -55,7 +55,6 @@ class FieldMixin(object):
     def unflat(self, flat):
         pos = len(self.prefix) + 2
         flat = dict((key[pos:], value) for key, value in flat.iteritems())
-        print flat
         return self.deepen(flat)
 
 

@@ -1,6 +1,7 @@
 # (c) Svarga project under terms of the new BSD license
 
 from procrustes import procrustes
+from procrustes.forms import forms
 from attest import Tests, Assert
 
 p = Tests()
@@ -88,6 +89,55 @@ def declarative():
     fail = Simple({'name': 'qweasd'})
     Assert(fail.data) == None
     Assert(fail.error) == {'name': 'Must be shorter than 5'}
+
+@p.test
+def forms_simple():
+    str = forms.String()('kukuku')
+    Assert(str.data) == 'kukuku'
+
+    FT = forms.Tuple(forms.String(), forms.String())
+    FL = forms.List(forms.String())
+    ft = FT(None)
+    widgets = [widget.render() for widget in ft.widgets()]
+    Assert(widgets) == ['<input id="form__0" value="">', '<input id="form__1" value="">']
+
+    ft = FT(('kuku', 'kuku'))
+    widgets = [widget.render() for widget in ft.widgets()]
+    Assert(widgets) == ['<input id="form__0" value="kuku">',
+                        '<input id="form__1" value="kuku">']
+    #Assert(str.render('strid')) == '<input id="strid" value="kukuku">'
+    fl = FL(['kuku', 'dsfasfd', 'xcvxczvx'])
+    widgets = [widget.render() for widget in fl.widgets()]
+    Assert(widgets) == ['<input id="form__0" value="kuku">',
+                        '<input id="form__1" value="dsfasfd">',
+                        '<input id="form__2" value="xcvxczvx">']
+
+@p.test
+def forms_dict_field():
+    FD = forms.Dict({'a': forms.String(), 'b': forms.String()})
+    fd = FD(None)
+    widgets = [widget.render() for widget in fd.widgets()]
+    Assert(widgets) == ['<input id="form__a" value="">',
+                        '<input id="form__b" value="">']
+
+    fd = FD({'a': 'kuku', 'b': 'may-may'})
+    widgets = [widget.render() for widget in fd.widgets()]
+    Assert(widgets) == ['<input id="form__a" value="kuku">',
+                        '<input id="form__b" value="may-may">']
+
+@p.test
+def forms_flat():
+    FL = forms.List(forms.String())
+    FD = forms.Dict({'a': forms.String(), 'b': forms.String(), 'c': FL})
+    flat = {'form__a': 'kuku', 'form__b': 'may-may', 'form__c__0': 'wer', 'form__c__1': 'kuku'}
+    unflat = FD.unflat(flat)
+    Assert(unflat) == {'a': 'kuku', 'b': 'may-may', 'c': ['kuku', 'wer']}
+    fd = FD(unflat)
+    widgets = [widget.render() for widget in fd.widgets()]
+    Assert(widgets) == ['<input id="form__a" value="kuku">',
+                        '<input id="form__c__0" value="kuku">',
+                        '<input id="form__c__1" value="wer">',
+                        '<input id="form__b" value="may-may">']
 
 
 if __name__ == '__main__':
