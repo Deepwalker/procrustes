@@ -88,7 +88,7 @@ def declarative():
 
     fail = Simple({'name': 'qweasd'})
     Assert(fail.data) == {'name': None}
-    Assert(fail.error) == {'name': 'Must be shorter than 5'}
+    Assert(fail.errors) == {'name': 'Must be shorter than 5'}
 
 @p.test
 def forms_simple():

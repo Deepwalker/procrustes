@@ -3,7 +3,8 @@
     <form method="post">
         <p>{{ form.errors }}</p>
         {% for widget in form.widgets() %}
-        <p>{{ widget.label()|safe }} {{ widget.render()|safe }}</p>
+            <p>{{ widget.label()|safe }} {{ widget.render()|safe }}
+            {% if widget.error %} {{ widget.error }}{% endif %}</p>
         {% endfor %}
         <input type="submit">
     </form>

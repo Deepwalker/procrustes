@@ -50,7 +50,7 @@ class FieldMixin(object):
         pass
 
     def widgets(self, id):
-        yield self.widget(data=self.data, id=id)
+        yield self.widget(data=self.data, id=id, error=self.error)
 
     @classmethod
     def unflat(self, flat):
@@ -122,6 +122,7 @@ class BaseWidget(object):
         self.data = kwargs.pop('data', None)
         self.prefix = kwargs.pop('prefix', 'form')
         self.id = kwargs.pop('id')
+        self.error = kwargs.pop('error')
         self.label_name = kwargs.pop('label_name', self.id)
         self.attrs = kwargs
 
