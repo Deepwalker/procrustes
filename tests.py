@@ -88,7 +88,7 @@ def declarative():
 
     fail = Simple({'name': 'qweasd'})
     Assert(fail.data) == {'name': None}
-    Assert(fail.errors) == {'name': 'Must be shorter than 5'}
+    Assert(fail.errors) == ['Must be shorter than 5']
 
 @p.test
 def forms_simple():
@@ -106,7 +106,6 @@ def forms_simple():
     widgets = [widget.render() for widget in ft.widgets()]
     Assert(widgets) == ['<input id="form__0" name="form__0" value="kuku">',
                         '<input id="form__1" name="form__1" value="kuku">']
-    #Assert(str.render('strid')) == '<input id="strid" value="kukuku">'
     fl = FL(['kuku', 'dsfasfd', 'xcvxczvx'])
     widgets = [widget.render() for widget in fl.widgets()]
     Assert(widgets) == ['<input id="form__0" name="form__0" value="kuku">',

@@ -1,7 +1,8 @@
 # (c) Svarga project under terms of the new BSD license
 
-from procrustes.register import procrustes
+import re
 from collections import defaultdict, Iterable
+from procrustes.register import procrustes
 
 
 class Base(object):
@@ -40,7 +41,11 @@ class Base(object):
 
     @property
     def errors(self):
-        return self.error
+        return list(self.itererrors)
+
+    def itererrors(self):
+        if self.error:
+            yield self.error
 
     def flatten(self, delimiter='__'):
         '''Make a version of value suitable to use in flat dictionary
@@ -81,9 +86,10 @@ class Tuple(Base):
             return
         return tuple(i.data for i in self.validated_data)
 
-    @property
-    def errors(self):
-        return [i.errors for i in self.validated_data if i.errors]
+    def itererrors(self):
+        for value in self.validated_data:
+            for error in value.itererrors():
+                yield error
 
     def get_included(self):
         if not self.validated_data:
@@ -133,9 +139,10 @@ class List(Base):
             return
         return [i.data for i in self.validated_data]
 
-    @property
-    def errors(self):
-        return [i.errors for i in self.validated_data if i.errors]
+    def itererrors(self):
+        for value in self.validated_data:
+            for error in value.itererrors():
+                yield error
 
     def get_included(self):
         if not self.validated_data:
@@ -177,13 +184,14 @@ class Dict(Base):
                     in self.validated_data.iteritems())
 
     @property
-    def errors(self):
-        return dict((name, value.errors) for name, value
-                      in self.validated_data.iteritems() if value.errors)
+    def itererrors(self):
+        for name, value in self.validated_data.iteritems():
+            for error in value.itererrors():
+                yield error
 
     def get_included(self):
         if not self.validated_data:
-            return dict((name, typ(None)) for name, typ 
+            return dict((name, typ(None, False)) for name, typ 
                                 in self.named_types.iteritems())
         return self.validated_data
 
@@ -208,10 +216,11 @@ class Dict(Base):
 @procrustes.register()
 class String(Base):
     @classmethod
-    def configure(cls, min_length=None, max_length=None, regex=None):
+    def configure(cls, min_length=None, max_length=None, regex=None, regex_msg=None):
         cls.min_length = min_length
         cls.max_length = max_length
-        cls.regex = regex
+        cls.regex = re.compile(regex) if regex is not None else None
+        cls.regex_msg = regex_msg if regex_msg else 'Dont match'
 
     def real_validate(self):
         if not isinstance(self.raw_data, (str, unicode)):
@@ -222,6 +231,10 @@ class String(Base):
             raise ValidationError('Must be longer than %i' % self.min_length)
         if self.max_length is not None and slen > self.max_length:
             raise ValidationError('Must be shorter than %i' % self.max_length)
+        if self.regex:
+            match = self.regex.match(self.raw_data)
+            if match is None or match.group()!=self.raw_data:
+                raise ValidationError(self.regex_msg)
 
         return self.raw_data
 

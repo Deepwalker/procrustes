@@ -6,7 +6,8 @@ app = Flask(__name__)
 
 
 class Form(forms.Declarative):
-    name = forms.String(min_length=1)
+    name = forms.String(min_length=1, regex='Y\w+',
+            regex_msg='Must start with Y')
     age = forms.Integer()
 
 
