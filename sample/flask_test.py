@@ -5,10 +5,14 @@ from procrustes.forms import forms
 app = Flask(__name__)
 
 
+class Pet(forms.Declarative):
+    name = forms.String()
+    species = forms.String()
+
 class Form(forms.Declarative):
-    name = forms.String(min_length=1, regex='Y\w+',
-            regex_msg='Must start with Y')
+    name = forms.String()
     age = forms.Integer()
+    pets = forms.List(Pet)
 
 
 @app.route('/', methods=['POST', 'GET'])

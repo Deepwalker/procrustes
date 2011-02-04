@@ -81,7 +81,11 @@ class Tuple(IterableMixin, FieldMixin, validators.Tuple):
 
 @forms.register()
 class List(IterableMixin, FieldMixin, validators.List):
-    pass
+    def template_widgets(self, id=''):
+        prefix = id + '__' if id else ''
+        field = self.type(None, False)
+        for widget in field.widgets(prefix + '%s'):
+            yield widget
 
 
 @forms.register()
@@ -114,7 +118,13 @@ class DeclarativeFieldMeta(validators.DeclarativeMeta):
 class Declarative(Dict):
     __metaclass__ = DeclarativeFieldMeta
 
+    def __getattr__(self, attr):
+        if attr not in self.named_types:
+            raise AttributeError('Atribute %s does not exist' % attr)
+        return self.get_included()[attr]
+
 forms.Declarative = Declarative
+
 
 # Widgets
 class BaseWidget(object):

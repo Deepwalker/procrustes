@@ -1,11 +1,34 @@
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+    <script>
+        $(function() {
+            window.pet_start = 1000
+
+            $("#add_pet").click(function(){
+                data = $("#pets_template").html().replace(/%s/g, window.pet_start)
+                window.pet_start += 1
+                $("#pets_placeholder").append(data)
+            })
+        })
+    </script>
+</head>
 <h1>Form test</h1>
 <div>
     <form method="post">
-        <p>{{ form.errors }}</p>
+        {# <p>{{ form.errors }}</p> #}
+        <p>{{ form.data }}</p>
         {% for widget in form.widgets() %}
             <p>{{ widget.label()|safe }} {{ widget.render()|safe }}
             {% if widget.error %} {{ widget.error }}{% endif %}</p>
         {% endfor %}
+        <div id="pets_placeholder"></div>
         <input type="submit">
     </form>
+    <p><a id="add_pet">Add pet</a></p>
+        <div id="pets_template" style="display: none;">
+            {% set widgets=form.pets.template_widgets('pets') %}
+            {% for widget in widgets %}
+            <p>{{ widget.label()|safe }} {{ widget.render()|safe }}
+            {% endfor %}
+        </div>
 </div>

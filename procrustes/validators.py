@@ -41,7 +41,7 @@ class Base(object):
 
     @property
     def errors(self):
-        return list(self.itererrors)
+        return list(self.itererrors())
 
     def itererrors(self):
         if self.error:
@@ -183,7 +183,6 @@ class Dict(Base):
         return dict((name, value.data) for name, value
                     in self.validated_data.iteritems())
 
-    @property
     def itererrors(self):
         for name, value in self.validated_data.iteritems():
             for error in value.itererrors():
@@ -216,7 +215,7 @@ class Dict(Base):
 @procrustes.register()
 class String(Base):
     @classmethod
-    def configure(cls, min_length=None, max_length=None, regex=None, regex_msg=None):
+    def configure(cls, min_length=1, max_length=None, regex=None, regex_msg=None):
         cls.min_length = min_length
         cls.max_length = max_length
         cls.regex = re.compile(regex) if regex is not None else None
@@ -276,10 +275,6 @@ class DeclarativeMeta(type):
 
 class Declarative(Dict):
     __metaclass__ = DeclarativeMeta
-
-    @classmethod
-    def configure(cls):
-        pass
 
 
 # Helpers
