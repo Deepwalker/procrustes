@@ -17,9 +17,9 @@ def hello():
         if form.is_valid():
             print 'Cool!'
         else:
-            print form.error
+            print form.errors
     else:
-        form = Form(None)
+        form = Form(None, False)
     return render_template('form.html', form=form)
 
 if __name__ == "__main__":

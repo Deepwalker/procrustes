@@ -61,7 +61,7 @@ class FieldMixin(object):
     def is_valid(self):
         self.raw_data = self.unflat(self.raw_data)
         self.safe_validate()
-        if not self.error:
+        if not self.errors:
             return True
 
 

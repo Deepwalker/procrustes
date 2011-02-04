@@ -47,7 +47,7 @@ def tuple_dict():
     PT = procrustes.Tuple(I, S, I)
     PD = procrustes.Dict({'a': I, 'b': S, 'c': PT})
     pd = PD({'b': 'kuku', 'c': (None, 'Lorem', 91)})
-    Assert(pd.data) == None
+    Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', None), 'b': 'kuku'}
     pd = PD({'b': 'kuku', 'c': (None, 'Lorem', 90)})
     Assert(pd.data) == {'a': None, 'c': (None, 'Lorem', 90), 'b': 'kuku'}
 
@@ -87,7 +87,7 @@ def declarative():
     Assert(simple.data) == {'name': 'test'}
 
     fail = Simple({'name': 'qweasd'})
-    Assert(fail.data) == None
+    Assert(fail.data) == {'name': None}
     Assert(fail.error) == {'name': 'Must be shorter than 5'}
 
 @p.test

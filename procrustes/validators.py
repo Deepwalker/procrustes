@@ -38,6 +38,10 @@ class Base(object):
     def data(self):
         return self.validated_data
 
+    @property
+    def errors(self):
+        return self.error
+
     def flatten(self, delimiter='__'):
         '''Make a version of value suitable to use in flat dictionary
         '''
@@ -69,9 +73,6 @@ class Tuple(Base):
             raise ValidationError('Must be iterable of length %i'
                                   % len(self.types))
         instances = [t(value, True) for t, value in zip(self.types, data)]
-        errors = [i.error for i in instances if i.error]
-        if errors:
-            raise ValidationError(errors)
         return instances
 
     @property
@@ -79,6 +80,10 @@ class Tuple(Base):
         if not self.validated_data:
             return
         return tuple(i.data for i in self.validated_data)
+
+    @property
+    def errors(self):
+        return [i.errors for i in self.validated_data if i.errors]
 
     def get_included(self):
         if not self.validated_data:
@@ -120,9 +125,6 @@ class List(Base):
         if not isinstance(self.raw_data, Iterable):
             raise ValidationError('Must be iterable')
         instances = [self.type(i, True) for i in self.raw_data]
-        errors = [i.error for i in instances if i.error]
-        if errors:
-            raise ValidationError(errors)
         return instances
 
     @property
@@ -130,6 +132,10 @@ class List(Base):
         if not self.validated_data:
             return
         return [i.data for i in self.validated_data]
+
+    @property
+    def errors(self):
+        return [i.errors for i in self.validated_data if i.errors]
 
     def get_included(self):
         if not self.validated_data:
@@ -161,10 +167,6 @@ class Dict(Base):
         instances = {}
         for name, typ in self.named_types.iteritems():
             instances[name] = typ(self.raw_data.get(name, None), True)
-        errors = dict((name, value.error) for name, value
-                      in instances.iteritems() if value.error)
-        if errors:
-            raise ValidationError(errors)
         return instances
 
     @property
@@ -173,6 +175,11 @@ class Dict(Base):
             return
         return dict((name, value.data) for name, value
                     in self.validated_data.iteritems())
+
+    @property
+    def errors(self):
+        return dict((name, value.errors) for name, value
+                      in self.validated_data.iteritems() if value.errors)
 
     def get_included(self):
         if not self.validated_data:
