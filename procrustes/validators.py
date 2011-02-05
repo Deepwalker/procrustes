@@ -7,7 +7,7 @@ from procrustes.ordereddict import OrderedDict
 
 
 class Base(object):
-    def __init__(self, data, validate=True):
+    def __init__(self, data=None, validate=True):
         self.raw_data = data
         self.validated_data = None
         self.error = None

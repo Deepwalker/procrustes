@@ -24,7 +24,7 @@ def hello():
         else:
             print form.errors
     else:
-        form = Form(None, False)
+        form = Form(validate=False)
     return render_template('form.html', form=form)
 
 if __name__ == "__main__":

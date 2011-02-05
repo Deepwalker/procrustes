@@ -14,7 +14,7 @@ S = procrustes.String()
 def simple():
     """Simple validators."""
     Assert(I(10).validate()) == 10
-    Assert(I(None).validate()) == None
+    Assert(I().validate()) == None
 
 
 @p.test
@@ -74,7 +74,7 @@ def empty_flatten():
     PD = procrustes.Dict({'a': I, 'b': S})
     PT = procrustes.Tuple(I, S, I, PL, PD)
 
-    Assert(dict(PT(None).flatten())) == {'4__b': None, '4__a': None, '1': None,
+    Assert(dict(PT().flatten())) == {'4__b': None, '4__a': None, '1': None,
                                             '0': None, '2': None, '3__0': None}
 
 
@@ -97,7 +97,7 @@ def forms_simple():
 
     FT = forms.Tuple(forms.String(), forms.String())
     FL = forms.List(forms.String())
-    ft = FT(None)
+    ft = FT()
     widgets = [widget.render() for widget in ft.widgets()]
     Assert(widgets) == ['<input id="form__0" name="form__0" value="">',
                         '<input id="form__1" name="form__1" value="">']
@@ -115,7 +115,7 @@ def forms_simple():
 @p.test
 def forms_dict_field():
     FD = forms.Dict({'a': forms.String(), 'b': forms.String()})
-    fd = FD(None)
+    fd = FD()
     widgets = [widget.render() for widget in fd.widgets()]
     Assert(widgets) == ['<input id="form__a" name="form__a" value="">',
                         '<input id="form__b" name="form__b" value="">']
