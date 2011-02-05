@@ -3,7 +3,7 @@
 import re
 from collections import defaultdict, Iterable
 from procrustes.register import procrustes
-from procrustes.ordereddict import OrderedDict
+from ordereddict import OrderedDict
 
 
 class Base(object):
