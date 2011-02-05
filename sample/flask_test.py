@@ -6,12 +6,12 @@ app = Flask(__name__)
 
 
 class Pet(forms.Declarative):
-    name = forms.String()
-    species = forms.String()
+    name = forms.String(name='Name')
+    species = forms.String(name='Species')
 
 class Form(forms.Declarative):
-    name = forms.String()
-    age = forms.Integer()
+    name = forms.String(name='Your name')
+    age = forms.Integer(name='Age')
     pets = forms.List(Pet)
 
 
@@ -21,8 +21,7 @@ def hello():
         form = Form(request.form, False)
         if form.is_valid():
             print 'Cool!'
-        else:
-            print form.errors
+            # Use form.data as validated structure
     else:
         form = Form(validate=False)
     return render_template('form.html', form=form)

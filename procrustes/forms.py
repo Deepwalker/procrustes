@@ -32,7 +32,7 @@ def create_field(field, *args, **kwargs):
     cls = forms.fields[field]
     new_cls = type('Pc' + field, (cls, ), {})
     new_cls.required = kwargs.pop('required', True)
-    new_cls.base_field_configure(*args, **kwargs)
+    new_cls.base_field_configure(args, kwargs)
     new_cls.configure(*args, **kwargs)
     return new_cls
 
@@ -40,17 +40,19 @@ def create_field(field, *args, **kwargs):
 # Fields
 class FieldMixin(object):
     @classmethod
-    def base_field_configure(cls, *args, **kwargs):
+    def base_field_configure(cls, args, kwargs):
         cls.widget = kwargs.pop('widget', BaseWidget)
         cls.prefix = kwargs.pop('prefix', 'form')
-        cls.field_configure(*args, **kwargs)
+        cls.name = kwargs.pop('name', None)
+        cls.field_configure(args, kwargs)
 
     @classmethod
-    def field_configure(cls, *args, **kwargs):
+    def field_configure(cls, args, kwargs):
         pass
 
     def widgets(self, id):
-        yield self.widget(data=self.data, id=id, error=self.error)
+        yield self.widget(data=self.data, id=id, error=self.error,
+                                                 label_name=self.name)
 
     @classmethod
     def unflat(self, flat):
@@ -97,6 +99,11 @@ class Dict(FieldMixin, validators.Dict):
             for widget in field.widgets(prefix + name):
                 yield widget
 
+    def __getattr__(self, attr):
+        if attr not in self.named_types:
+            raise AttributeError('Atribute %s does not exist' % attr)
+        return self.get_included()[attr]
+
 
 @forms.register()
 class String(FieldMixin, validators.String):
@@ -118,22 +125,19 @@ class DeclarativeFieldMeta(validators.DeclarativeMeta):
 class Declarative(Dict):
     __metaclass__ = DeclarativeFieldMeta
 
-    def __getattr__(self, attr):
-        if attr not in self.named_types:
-            raise AttributeError('Atribute %s does not exist' % attr)
-        return self.get_included()[attr]
-
 forms.Declarative = Declarative
 
 
 # Widgets
 class BaseWidget(object):
-    def __init__(self, **kwargs):
-        self.data = kwargs.pop('data', None)
-        self.prefix = kwargs.pop('prefix', 'form')
-        self.id = kwargs.pop('id')
-        self.error = kwargs.pop('error')
-        self.label_name = kwargs.pop('label_name', self.id)
+    def __init__(self, data=None, prefix='form', id=None, error=None, **kwargs):
+        self.data = data
+        self.prefix = prefix
+        self.id = id
+        self.error = error
+        self.label_name = kwargs.pop('label_name', None)
+        if self.label_name is None:
+            self.label_name = self.id
         self.attrs = kwargs
 
     def render(self):
