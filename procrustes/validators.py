@@ -70,6 +70,7 @@ class Tuple(Base):
     @classmethod
     def configure(cls, *types):
         cls.types = types
+        cls.len_types = len(types)
 
     def real_validate(self):
         if not isinstance(self.raw_data, Iterable):
@@ -94,7 +95,7 @@ class Tuple(Base):
 
     def get_included(self):
         if not self.validated_data:
-            return (value(None) for value in self.types)
+            return (typ(None, False) for typ in self.types)
         return self.validated_data
 
     def flatten(self, delimiter='__'):
@@ -106,20 +107,20 @@ class Tuple(Base):
 
     @classmethod
     def deepen(cls, flat, delimiter='__'):
-        i = 0
-        collector = []
+        collector = {}
+        set_nums = set(xrange(cls.len_types))
         for key, flatchild in sorted(group_by_key(flat, delimiter).iteritems()):
             try:
                 number = int(key)
             except ValueError:
                 continue
-            if i < number:
-                # TODO OMG
-                collector.extend([None] * (number - i))
-                i = number
-            collector.append(cls.types[number].deepen(flatchild))
-            i = i + 1
-        return tuple(collector)
+            if number > cls.len_types:
+                continue
+            collector[number] = cls.types[number].deepen(flatchild)
+            set_nums.remove(number)
+        for i in set_nums: # Add unavailable slots
+            collector[i] = None
+        return tuple(v for k, v in sorted(collector.items()))
 
 
 @procrustes.register()
@@ -147,7 +148,7 @@ class List(Base):
 
     def get_included(self):
         if not self.validated_data:
-            return [self.type(None)]
+            return [self.type(None, False)]
         return self.validated_data
 
     def flatten(self, delimiter='__'):
@@ -280,6 +281,9 @@ class Declarative(Dict):
 
 # Helpers
 def group_by_key(flat, delimiter='__'):
+    if flat is None:
+        return {}
+
     def split_key(flat):
         for key, value in sorted(flat.iteritems()):
             keys = key.split(delimiter, 1)

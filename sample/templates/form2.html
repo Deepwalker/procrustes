@@ -1,0 +1,11 @@
+<h1>Form test 2</h1>
+<div>
+    <form method="post">
+        <p>{{ form.data }}</p>
+        {% for widget in form.widgets() %}
+            <p>{{ widget.label()|safe }}{{ widget.render()|safe }}
+            {% if widget.error %}{{ widget.error }}{% endif %}</p>
+        {% endfor %}
+        <input type="submit">
+    </form>
+</div>

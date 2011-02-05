@@ -1,7 +1,7 @@
 # (c) Svarga project under terms of the new BSD license
 
 from procrustes import procrustes
-from procrustes.forms import forms
+from procrustes import forms
 from attest import Tests, Assert
 
 p = Tests()
