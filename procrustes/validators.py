@@ -3,6 +3,7 @@
 import re
 from collections import defaultdict, Iterable
 from procrustes.register import procrustes
+from procrustes.ordereddict import OrderedDict
 
 
 class Base(object):
@@ -262,7 +263,7 @@ class Integer(Base):
 # nice declarativeness
 class DeclarativeMeta(type):
     def __new__(cls, name, bases, attrs):
-        fields = {}
+        fields = OrderedDict()
         for name, attr in list(attrs.iteritems()): # explicit copy
             # isinstance(attr, type) == attr is a class
             if isinstance(attr, type) and issubclass(attr, Base):
