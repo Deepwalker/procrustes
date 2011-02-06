@@ -50,29 +50,29 @@ class FieldMixin(object):
     def field_configure(cls, args, kwargs):
         pass
 
-    def widgets(self, id):
+    def widgets(self, id, delimiter=None):
         yield self.widget(data=self.data, id=id, error=self.error,
                                                  label_name=self.name)
 
     @classmethod
-    def unflat(self, flat):
+    def unflat(self, flat, delimiter='__'):
         pos = len(self.prefix) + 2
         flat = dict((key[pos:], value) for key, value in flat.iteritems())
-        return self.deepen(flat)
+        return self.deepen(flat, delimiter=delimiter)
 
-    def is_valid(self):
-        self.raw_data = self.unflat(self.raw_data)
+    def is_valid(self, delimiter='__'):
+        self.raw_data = self.unflat(self.raw_data, delimiter=delimiter)
         self.safe_validate()
         if not self.errors:
             return True
 
 
 class IterableMixin(object):
-    def widgets(self, id=''):
-        prefix = id + '__' if id else ''
+    def widgets(self, id='', delimiter='__'):
+        prefix = id + delimiter if id else ''
         data = self.get_included()
         for num, field in enumerate(data):
-            for widget in field.widgets(prefix + str(num)):
+            for widget in field.widgets(prefix + str(num), delimiter=delimiter):
                 yield widget
 
 
@@ -83,20 +83,20 @@ class Tuple(IterableMixin, FieldMixin, validators.Tuple):
 
 @forms.register()
 class List(IterableMixin, FieldMixin, validators.List):
-    def template_widgets(self, id=''):
-        prefix = id + '__' if id else ''
+    def template_widgets(self, id='', delimiter='__'):
+        prefix = id + delimiter if id else ''
         field = self.type(None, False)
-        for widget in field.widgets(prefix + '%s'):
+        for widget in field.widgets(prefix + '%s', delimiter=delimiter):
             yield widget
 
 
 @forms.register()
 class Dict(FieldMixin, validators.Dict):
-    def widgets(self, id=''):
-        prefix = id + '__' if id else ''
+    def widgets(self, id='', delimiter='__'):
+        prefix = id + delimiter if id else ''
         data = self.get_included()
         for name, field in data.iteritems():
-            for widget in field.widgets(prefix + name):
+            for widget in field.widgets(prefix + name, delimiter=delimiter):
                 yield widget
 
     def __getattr__(self, attr):
