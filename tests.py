@@ -138,6 +138,9 @@ def forms_flat():
                         '<input id="form__c__0" name="form__c__0" value="kuku">',
                         '<input id="form__c__1" name="form__c__1" value="wer">',
                         '<input id="form__b" name="form__b" value="may-may">']
+    form = FD(flat)
+    Assert(form.is_valid()) == True
+    Assert(form.data) == {'a': 'kuku', 'b': 'may-may', 'c': ['kuku', 'wer']}
 
 
 if __name__ == '__main__':

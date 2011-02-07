@@ -24,17 +24,17 @@ class Base(object):
         if not self.required and self.raw_data is None:
             return None
         try:
-            self.validated_data = self.real_validate()
-            return self.validated_data
+            self.validated_data = self.check_data()
         except ValidationError as e:
             self.error = e.args[0]
             if not safe:
                 raise
+        return self.validated_data
 
-    def real_validate(self):
+    def check_data(self):
         '''Inner validate function, without `required` flag check
         '''
-        raise NotImplementedError('Define `real_validate` method')
+        raise NotImplementedError('Define `check_data` method')
 
     @property
     def data(self):
@@ -72,7 +72,7 @@ class Tuple(Base):
         cls.types = types
         cls.len_types = len(types)
 
-    def real_validate(self):
+    def check_data(self):
         if not isinstance(self.raw_data, Iterable):
             raise ValidationError('Must be iterable')
         data = tuple(self.raw_data)
@@ -129,7 +129,7 @@ class List(Base):
     def configure(cls, type):
         cls.type = type
 
-    def real_validate(self):
+    def check_data(self):
         if not isinstance(self.raw_data, Iterable):
             raise ValidationError('Must be iterable')
         instances = [self.type(i, True) for i in self.raw_data]
@@ -170,7 +170,7 @@ class Dict(Base):
     def configure(cls, named_types):
         cls.named_types = named_types
 
-    def real_validate(self):
+    def check_data(self):
         if not isinstance(self.raw_data, dict):
             raise ValidationError('Value must be dict')
         instances = {}
@@ -223,7 +223,7 @@ class String(Base):
         cls.regex = re.compile(regex) if regex is not None else None
         cls.regex_msg = regex_msg if regex_msg else 'Dont match'
 
-    def real_validate(self):
+    def check_data(self):
         if not isinstance(self.raw_data, (str, unicode)):
             raise ValidationError('Must be str or unicode instance')
         slen = len(self.raw_data)
@@ -247,7 +247,7 @@ class Integer(Base):
         cls.min = min
         cls.max = max
 
-    def real_validate(self):
+    def check_data(self):
         try:
             i = int(self.raw_data)
         except (ValueError, TypeError):
