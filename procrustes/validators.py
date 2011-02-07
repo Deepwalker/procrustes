@@ -12,29 +12,29 @@ class Base(object):
         self.validated_data = None
         self.error = None
         if validate:
-            self.safe_validate()
+            self.validate(safe=True)
 
     @classmethod
     def configure(cls, *args, **kwargs):
         raise NotImplementedError('Define `configure` method')
 
-    def validate(self):
+    def validate(self, safe=False):
         '''Validate data and return it
         '''
         if not self.required and self.raw_data is None:
             return None
-        return self.real_validate()
+        try:
+            self.validated_data = self.real_validate()
+            return self.validated_data
+        except ValidationError as e:
+            self.error = e.args[0]
+            if not safe:
+                raise
 
     def real_validate(self):
         '''Inner validate function, without `required` flag check
         '''
         raise NotImplementedError('Define `real_validate` method')
-
-    def safe_validate(self):
-        try:
-            self.validated_data = self.validate()
-        except ValidationError as e:
-            self.error = e.args[0]
 
     @property
     def data(self):

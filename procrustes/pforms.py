@@ -62,7 +62,7 @@ class FieldMixin(object):
 
     def is_valid(self, delimiter='__'):
         self.raw_data = self.unflat(self.raw_data, delimiter=delimiter)
-        self.safe_validate()
+        self.validate(safe=True)
         if not self.errors:
             return True
 
