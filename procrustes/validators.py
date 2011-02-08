@@ -175,7 +175,7 @@ class Dict(Base):
             raise ValidationError('Value must be dict')
         instances = {}
         for name, typ in self.named_types.iteritems():
-            instances[name] = typ(self.raw_data.get(name, None), True)
+            instances[name] = typ(self.raw_data.get(name), True)
         return instances
 
     @property
