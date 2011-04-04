@@ -9,7 +9,7 @@ from ordereddict import OrderedDict
 class Base(object):
     default_data = None
 
-    def __init__(self, data=None, validate=True):
+    def __init__(self, data=None, validate=False):
         self.raw_data = data
         self.validated_data = self.default_data
         self.error = None
@@ -18,7 +18,7 @@ class Base(object):
 
     @classmethod
     def configure(cls, *args, **kwargs):
-        raise NotImplementedError('Define `configure` method')
+        pass
 
     def validate(self, safe=False):
         '''Validate data and return it
@@ -270,6 +270,12 @@ class Integer(Base):
             raise ValidationError('Must be smaller than %i' % self.max)
 
         return i
+
+
+@procrustes.register()
+class Boolean(Base):
+    def check_data(self):
+        return bool(self.raw_data)
 
 
 # nice declarativeness

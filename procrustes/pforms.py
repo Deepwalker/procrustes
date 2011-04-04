@@ -1,7 +1,7 @@
 # (c) Svarga project under terms of the new BSD license
 
 from functools import partial
-from procrustes import validators
+from procrustes import validators, widgets
 
 
 class Forms(object):
@@ -41,7 +41,7 @@ def create_field(field, *args, **kwargs):
 class FieldMixin(object):
     @classmethod
     def base_field_configure(cls, args, kwargs):
-        cls.widget = kwargs.pop('widget', BaseWidget)
+        cls.widget = kwargs.pop('widget', getattr(cls, 'widget', widgets.Base))
         cls.prefix = kwargs.pop('prefix', 'form')
         cls.name = kwargs.pop('name', None)
         cls.field_configure(args, kwargs)
@@ -115,6 +115,11 @@ class Integer(FieldMixin, validators.Integer):
     pass
 
 
+@forms.register()
+class Boolean(FieldMixin, validators.Boolean):
+    widget = widgets.CheckBox
+
+
 # Declarative
 class DeclarativeFieldMeta(validators.DeclarativeMeta):
     def __new__(cls, name, bases, attrs):
@@ -126,30 +131,3 @@ class Declarative(Dict):
     __metaclass__ = DeclarativeFieldMeta
 
 forms.Declarative = Declarative
-
-
-# Widgets
-class BaseWidget(object):
-    def __init__(self, data=None, prefix='form', id=None, error=None, **kwargs):
-        self.data = data
-        self.prefix = prefix
-        self.id = id
-        self.error = error
-        self.label_name = kwargs.pop('label_name', None)
-        if self.label_name is None:
-            self.label_name = self.id
-        self.attrs = kwargs
-
-    def render(self):
-        data = self.data if self.data else ''
-        attrs = ' '.join('%s="%s"' % (name, attr) for name, attr
-                                                in self.attrs.iteritems())
-        if attrs:
-            attrs += ' '
-        name = self.prefix + '__' + self.id
-        return '<input id="{0}" name="{0}" {1}value="{2}">'.format(name, attrs, data)
-
-    def label(self):
-        name = self.prefix + '__' + self.id
-        return '<label for="%s">%s</label>' % (name, self.label_name)
-
