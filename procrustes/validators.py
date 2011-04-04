@@ -7,9 +7,11 @@ from ordereddict import OrderedDict
 
 
 class Base(object):
+    default_data = None
+
     def __init__(self, data=None, validate=True):
         self.raw_data = data
-        self.validated_data = None
+        self.validated_data = self.default_data
         self.error = None
         if validate:
             self.validate(safe=True)
@@ -71,6 +73,7 @@ class Tuple(Base):
     def configure(cls, *types):
         cls.types = types
         cls.len_types = len(types)
+        cls.default_data = []
 
     def check_data(self):
         if not isinstance(self.raw_data, Iterable):
@@ -89,6 +92,8 @@ class Tuple(Base):
         return tuple(i.data for i in self.validated_data)
 
     def itererrors(self):
+        if self.error:
+            yield self.error
         for value in self.validated_data:
             for error in value.itererrors():
                 yield error
@@ -128,6 +133,7 @@ class List(Base):
     @classmethod
     def configure(cls, type):
         cls.type = type
+        cls.default_data = []
 
     def check_data(self):
         if not isinstance(self.raw_data, Iterable):
@@ -142,6 +148,8 @@ class List(Base):
         return [i.data for i in self.validated_data]
 
     def itererrors(self):
+        if self.error:
+            yield self.error
         for value in self.validated_data:
             for error in value.itererrors():
                 yield error
@@ -169,6 +177,7 @@ class Dict(Base):
     @classmethod
     def configure(cls, named_types):
         cls.named_types = named_types
+        cls.default_data = {}
 
     def check_data(self):
         if not isinstance(self.raw_data, dict):
@@ -186,6 +195,8 @@ class Dict(Base):
                     in self.validated_data.iteritems())
 
     def itererrors(self):
+        if self.error:
+            yield self.error
         for name, value in self.validated_data.iteritems():
             for error in value.itererrors():
                 yield error
@@ -272,6 +283,7 @@ class DeclarativeMeta(type):
                 del attrs[name]
         attrs['named_types'] = fields
         attrs['required'] = attrs.get('required', True)
+        attrs['default_data'] = {}
         return type.__new__(cls, name, bases, attrs)
 
 

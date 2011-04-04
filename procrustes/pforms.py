@@ -11,7 +11,7 @@ class Forms(object):
     def __getattr__(self, field):
         if field in self.fields:
             return partial(create_field, field)
-        raise AttributeError(validator)
+        raise AttributeError(field)
 
     def register(self, *args):
         largs = len(args)

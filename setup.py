@@ -27,6 +27,7 @@ setupconf = dict(
 
     packages = find_packages(),
 
+    install_requires = ['ordereddict'],
     test_loader = 'attest:Loader',
     test_suite = 'tests.p',
 
