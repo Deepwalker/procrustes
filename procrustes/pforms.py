@@ -2,9 +2,12 @@
 
 from functools import partial
 from procrustes import validators, widgets
+from ordereddict import OrderedDict
 
 
 class Forms(object):
+    counter = 0
+
     def __init__(self):
         self.fields = {}
 
@@ -31,6 +34,8 @@ forms = Forms()
 def create_field(field, *args, **kwargs):
     cls = forms.fields[field]
     new_cls = type('Pc' + field, (cls, ), {})
+    new_cls.order_counter = Forms.counter
+    Forms.counter += 1
     new_cls.required = kwargs.pop('required', True)
     new_cls.base_field_configure(args, kwargs)
     new_cls.configure(*args, **kwargs)
@@ -124,6 +129,12 @@ class Boolean(FieldMixin, validators.Boolean):
 class DeclarativeFieldMeta(validators.DeclarativeMeta):
     def __new__(cls, name, bases, attrs):
         attrs['prefix'] = attrs.get('prefix', 'form')
+        attrs = OrderedDict(
+                    sorted([(k, v) for k, v in attrs.iteritems()],
+                        cmp=lambda x, y: cmp(getattr(x[1], 'order_counter', None),
+                                             getattr(y[1], 'order_counter', None))
+                        )
+                    )
         return validators.DeclarativeMeta.__new__(cls, name, bases, attrs)
 
 

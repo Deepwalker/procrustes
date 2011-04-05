@@ -182,7 +182,7 @@ class Dict(Base):
     def check_data(self):
         if not isinstance(self.raw_data, dict):
             raise ValidationError('Value must be dict')
-        instances = {}
+        instances = OrderedDict()
         for name, typ in self.named_types.iteritems():
             instances[name] = typ(self.raw_data.get(name), True)
         return instances
@@ -203,7 +203,7 @@ class Dict(Base):
 
     def get_included(self):
         if not self.validated_data:
-            return dict((name, typ(None, False)) for name, typ 
+            return OrderedDict((name, typ(None, False)) for name, typ
                                 in self.named_types.iteritems())
         return self.validated_data
 

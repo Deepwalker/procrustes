@@ -38,4 +38,9 @@ class CheckBox(Base):
             checked = ' checked'
         return ('<input type="checkbox" id="{0}" '
                 'name="{0}" {1}value="True"{3}>').format(name, attrs,
-                                                        data, checked)
+                                                         data, checked)
+
+class TextArea(Base):
+    def render_html(self, name, attrs, data):
+        return ('<textarea id="{0}" '
+                'name="{0}" {1}>{2}</textarea>').format(name, attrs, data)
