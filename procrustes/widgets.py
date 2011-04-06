@@ -3,10 +3,9 @@
 
 # Widgets
 class Base(object):
-    marker = False
-
     def __init__(self, data=None, prefix='form', id=None,
                  delimiter='__', error=None, **kwargs):
+        self.marker = kwargs.pop('marker', False)
         self.data = data
         self.prefix = prefix
         self.id = id
@@ -38,8 +37,6 @@ class Base(object):
 
 
 class Marker(Base):
-    marker = True
-
     def render(self, *a, **kw):
         return ''
 

@@ -97,9 +97,15 @@ class List(IterableMixin, FieldMixin, validators.List):
     def widgets(self, id='', delimiter='__', parent=''):
         prefix = id + delimiter if id else ''
         # We mark list by yielding fake widget
-        yield widgets.Marker(id=prefix, parent=parent + id, label_name=self.type.name)
-        for w in super(List, self).widgets(id, delimiter, parent):
-            yield w
+        marker = partial(widgets.Marker, id=prefix,
+                         parent=parent + id, label_name=self.type.name)
+        yield marker(marker='place')
+        data = self.get_included()
+        for num, field in enumerate(data):
+            yield marker(marker='start')
+            for widget in field.widgets(prefix + str(num), delimiter, parent):
+                yield widget
+            yield marker(marker='stop')
 
     def template_widgets(self, id='', delimiter='__', parent=''):
         prefix = id + delimiter if id else ''
