@@ -3,8 +3,10 @@
 
 # Widgets
 class Base(object):
+    marker = False
 
-    def __init__(self, data=None, prefix='form', id=None, error=None, **kwargs):
+    def __init__(self, data=None, prefix='form', id=None,
+                 delimiter='__', error=None, **kwargs):
         self.data = data
         self.prefix = prefix
         self.id = id
@@ -12,7 +14,11 @@ class Base(object):
         self.label_name = kwargs.pop('label_name', None)
         if self.label_name is None:
             self.label_name = self.id
+        self.parent = kwargs.get('parent', '')
         self.attrs = kwargs
+        self.name = self.prefix + ('__' + id if id else '')
+        self.parent_label = self.prefix + delimiter + self.parent
+
 
     def render(self):
         data = self.data if self.data else ''
@@ -20,8 +26,7 @@ class Base(object):
                                                   in self.attrs.iteritems())
         if attrs:
             attrs += ' '
-        name = self.prefix + '__' + self.id
-        return self.render_html(name, attrs, data)
+        return self.render_html(self.name, attrs, data)
 
     def render_html(self, name, attrs, data):
         return '<input id="{0}" name="{0}" {1}value="{2}">'.format(name, attrs,
@@ -30,6 +35,17 @@ class Base(object):
     def label(self):
         name = self.prefix + '__' + self.id
         return '<label for="%s">%s</label>' % (name, self.label_name)
+
+
+class Marker(Base):
+    marker = True
+
+    def render(self, *a, **kw):
+        return ''
+
+    def label(self, *a, **kw):
+        return ''
+
 
 class CheckBox(Base):
     def render_html(self, name, attrs, data):

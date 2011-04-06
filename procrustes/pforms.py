@@ -55,9 +55,9 @@ class FieldMixin(object):
     def field_configure(cls, args, kwargs):
         pass
 
-    def widgets(self, id, delimiter=None):
+    def widgets(self, id, delimiter='__', parent=''):
         yield self.widget(data=self.data, id=id, error=self.error,
-                                                 label_name=self.name)
+                          delimiter=delimiter, parent=parent, label_name=self.name)
 
     @classmethod
     def unflat(self, flat, delimiter='__'):
@@ -73,22 +73,18 @@ class FieldMixin(object):
 
 
 class IterableMixin(object):
-    def widgets(self, id='', delimiter='__'):
+    def widgets(self, id='', delimiter='__', parent='', attribute='widgets'):
         prefix = id + delimiter if id else ''
         data = self.get_included()
         for num, field in enumerate(data):
-            for widget in field.widgets(prefix + str(num), delimiter=delimiter):
+            if not hasattr(field, attribute):
+                continue
+            for widget in getattr(field, attribute)(prefix + str(num),
+                                                    delimiter, parent):
                 yield widget
 
-    def template_widgets(self, id='', delimiter='__'):
-        prefix = id + delimiter if id else ''
-        data = self.get_included()
-        for num, field in enumerate(data):
-            if not hasattr(field, 'template_widgets'):
-                continue
-            for widget in field.template_widgets(prefix + str(num),
-                                                 delimiter=delimiter):
-                yield widget
+    def template_widgets(self, id='', delimiter='__', parent=''):
+        return self.widgets(id, delimiter, parent, 'template_widgets')
 
 
 @forms.register()
@@ -98,31 +94,36 @@ class Tuple(IterableMixin, FieldMixin, validators.Tuple):
 
 @forms.register()
 class List(IterableMixin, FieldMixin, validators.List):
-    def template_widgets(self, id='', delimiter='__'):
+    def widgets(self, id='', delimiter='__', parent=''):
         prefix = id + delimiter if id else ''
+        # We mark list by yielding fake widget
+        yield widgets.Marker(id=prefix, parent=parent + id, label_name=self.type.name)
+        for w in super(List, self).widgets(id, delimiter, parent):
+            yield w
+
+    def template_widgets(self, id='', delimiter='__', parent=''):
+        prefix = id + delimiter if id else ''
+        parent = parent + id
         field = self.type(None, False)
-        for widget in field.widgets(prefix + '%s', delimiter=delimiter):
+        for widget in field.widgets(prefix + '%s', delimiter, parent):
             yield widget
 
 
 @forms.register()
 class Dict(FieldMixin, validators.Dict):
-    def widgets(self, id='', delimiter='__'):
+    def widgets(self, id='', delimiter='__', parent='', attribute='widgets'):
         prefix = id + delimiter if id else ''
         data = self.get_included()
         for name, field in data.iteritems():
-            for widget in field.widgets(prefix + name, delimiter=delimiter):
+            if not hasattr(field, attribute):
+                continue
+            for widget in getattr(field, attribute)(prefix + name,
+                                                    delimiter=delimiter,
+                                                    parent=parent):
                 yield widget
 
-    def template_widgets(self, id='', delimiter='__'):
-        prefix = id + delimiter if id else ''
-        data = self.get_included()
-        for name, field in data.iteritems():
-            if not hasattr(field, 'template_widgets'):
-                continue
-            for widget in field.template_widgets(prefix + name,
-                                                 delimiter=delimiter):
-                yield widget
+    def template_widgets(self, id='', delimiter='__', parent=''):
+        return self.widgets(id, delimiter, parent, 'template_widgets')
 
     def __getattr__(self, attr):
         if attr not in self.named_types:
