@@ -80,6 +80,16 @@ class IterableMixin(object):
             for widget in field.widgets(prefix + str(num), delimiter=delimiter):
                 yield widget
 
+    def template_widgets(self, id='', delimiter='__'):
+        prefix = id + delimiter if id else ''
+        data = self.get_included()
+        for num, field in enumerate(data):
+            if not hasattr(field, 'template_widgets'):
+                continue
+            for widget in field.template_widgets(prefix + str(num),
+                                                 delimiter=delimiter):
+                yield widget
+
 
 @forms.register()
 class Tuple(IterableMixin, FieldMixin, validators.Tuple):
@@ -102,6 +112,16 @@ class Dict(FieldMixin, validators.Dict):
         data = self.get_included()
         for name, field in data.iteritems():
             for widget in field.widgets(prefix + name, delimiter=delimiter):
+                yield widget
+
+    def template_widgets(self, id='', delimiter='__'):
+        prefix = id + delimiter if id else ''
+        data = self.get_included()
+        for name, field in data.iteritems():
+            if not hasattr(field, 'template_widgets'):
+                continue
+            for widget in field.template_widgets(prefix + name,
+                                                 delimiter=delimiter):
                 yield widget
 
     def __getattr__(self, attr):
