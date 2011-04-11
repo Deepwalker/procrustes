@@ -57,3 +57,9 @@ class TextArea(Base):
     def render_html(self, name, attrs, data):
         return ('<textarea id="{0}" '
                 'name="{0}" {1}>{2}</textarea>').format(name, attrs, data)
+
+
+class HiddenInput(Base):
+    def render_html(self, name, attrs, data):
+        return ('<input type="password" id="{0}"'
+                ' name="{0}" {1}value="{2}">').format(name, attrs, data)
