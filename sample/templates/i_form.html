@@ -1,0 +1,38 @@
+    <form method="post">
+        {% if form.error %}<p>{{ form.error }}</p>{% endif %}
+        <div class="form">
+            {% for widget in form.widgets() %}
+            {% if widget.marker=='place' %}
+            <p id="add__{{ widget.parent_label }}">Add one {{ widget.label_name }}</p>
+            <div id="placeholder__{{ widget.parent_label }}" class="procrustes__placeholder"></div>
+            {% elif widget.marker=='start' %}
+            <div>
+            {% elif widget.marker==False %}
+            <div class="form_row">
+                <span class="form_label">{{ widget.label()|safe }}</span>
+                <span class="form_input">{{ widget.render()|safe }}</span>
+                <span class="form_error">{% if widget.error %}{{ widget.error }}{% endif %}</span>
+            </div>
+            {% elif widget.marker=='stop' %}
+            <span class="form_delete">Delete</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <input type="submit">
+    </form>
+    <div style="display: none;">
+        {% for widget in form.template_widgets() %}
+            {% if widget.marker=='start' %}
+            <div id='template__{{ widget.parent_label }}' class="procrustes_template pt__{{ widget.name }}">
+            {% elif widget.marker==False %}
+            <div class="procrustes_template pt__{{ widget.name }}">
+                <span class="form_label">{{ widget.label()|safe }}</span>
+                <span class="form_input">{{ widget.render()|safe }}</span>
+            </div>
+            {% elif widget.marker=='stop' %}
+            <span class="form_delete">Delete</span>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>

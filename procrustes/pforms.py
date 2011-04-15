@@ -48,7 +48,7 @@ class FieldMixin(object):
     def base_field_configure(cls, args, kwargs):
         cls.widget = kwargs.pop('widget', getattr(cls, 'widget', widgets.Base))
         cls.prefix = kwargs.pop('prefix', 'form')
-        cls.name = kwargs.pop('name', None)
+        cls.field_name = kwargs.pop('field_name', None)
         cls.field_configure(args, kwargs)
 
     @classmethod
@@ -57,7 +57,7 @@ class FieldMixin(object):
 
     def widgets(self, id, delimiter='__', parent=''):
         yield self.widget(data=self.data, id=id, error=self.error,
-                          delimiter=delimiter, parent=parent, label_name=self.name)
+                          delimiter=delimiter, parent=parent, label_name=self.field_name)
 
     @classmethod
     def unflat(self, flat, delimiter='__'):
@@ -98,7 +98,7 @@ class List(IterableMixin, FieldMixin, validators.List):
         prefix = id + delimiter if id else ''
         # We mark list by yielding fake widget
         marker = partial(widgets.Marker, id=prefix,
-                         parent=parent + id, label_name=self.type.name)
+                         parent=parent + id, label_name=self.type.field_name)
         yield marker(marker='place')
         data = self.get_included()
         for num, field in enumerate(data):
@@ -109,10 +109,14 @@ class List(IterableMixin, FieldMixin, validators.List):
 
     def template_widgets(self, id='', delimiter='__', parent=''):
         prefix = id + delimiter if id else ''
+        marker = partial(widgets.Marker, id=prefix,
+                         parent=parent + id, label_name=self.type.field_name)
         parent = parent + id
         field = self.type(None, False)
+        yield marker(marker='start')
         for widget in field.widgets(prefix + '%s', delimiter, parent):
             yield widget
+        yield marker(marker='stop')
 
 
 @forms.register()

@@ -1,38 +1,14 @@
 <head>
     <script src="http://code.jquery.com/jquery-1.5.min.js"></script>
-    <script>
-        $(function() {
-            window.pet_start = 1000
-
-            $("#add_pet").click(function(){
-                data = $("#pets_template").html().replace(/%s/g, window.pet_start)
-                window.pet_start += 1
-                $("#pets_placeholder").append(data)
-            })
-        })
-    </script>
+    <script src="{{ url_for('static', filename='procrustes.js') }}"></script>
     <style>
         #add_pet { cursor: pointer; color: #44f; }
+        form { font-size: large; }
+        .form_label { min-width: 200px; display: inline-block; }
+        textarea { min-width: 200px; min-height: 100px; border-radius: 5px; }
     </style>
 </head>
 <h1>Form test</h1>
 <div>
-    <form method="post">
-        <p>{{ form.data }}</p>
-        {% for widget in form.widgets() %}
-            <p>{{ widget.label()|safe }}{{ widget.render()|safe }}
-            {% if widget.error %}{{ widget.error }}{% endif %}</p>
-        {% endfor %}
-        <div id="pets_placeholder"></div>
-        <input type="submit">
-    </form>
-    <p><a id="add_pet">Add pet</a></p>
-    <div id="pets_template" style="display: none;">
-        <div id="pets__%s">
-        {% set widgets=form.pets.template_widgets('pets') %}
-        {% for widget in widgets %}
-        <p>{{ widget.label()|safe }}{{ widget.render()|safe }}
-        {% endfor %}
-        </div>
-    </div>
+{% include "i_form.html" %}
 </div>

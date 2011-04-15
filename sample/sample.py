@@ -3,15 +3,17 @@ from flask import request
 from procrustes import forms
 
 app = Flask(__name__)
+app.debug = True
 
 
 class Pet(forms.Declarative):
-    name = forms.String(name='Name')
-    species = forms.String(name='Species')
+    name = forms.String(field_name='Name')
+    species = forms.String(field_name='Species')
+    field_name = 'Pet'
 
 class Form(forms.Declarative):
-    name = forms.String(name='Your name')
-    age = forms.Integer(name='Age')
+    name = forms.String(field_name='Your name')
+    age = forms.Integer(field_name='Age')
     pets = forms.List(Pet)
 
 
