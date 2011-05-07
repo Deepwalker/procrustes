@@ -1,7 +1,7 @@
 # (c) Svarga project under terms of the new BSD license
 
 from functools import partial
-from procrustes import validators, widgets
+from procrustes import validators, widgets, utils
 from ordereddict import OrderedDict
 
 
@@ -49,6 +49,7 @@ class FieldMixin(object):
         cls.widget = kwargs.pop('widget', getattr(cls, 'widget', widgets.Base))
         cls.prefix = kwargs.pop('prefix', 'form')
         cls.field_name = kwargs.pop('field_name', None)
+        cls.widget_kwargs = utils.pop_prefixed_args(kwargs, 'w_')
         cls.field_configure(args, kwargs)
 
     @classmethod
@@ -57,7 +58,9 @@ class FieldMixin(object):
 
     def widgets(self, id, delimiter='__', parent=''):
         yield self.widget(data=self.data, id=id, error=self.error,
-                          delimiter=delimiter, parent=parent, label_name=self.field_name)
+                          delimiter=delimiter, parent=parent,
+                          label_name=self.field_name,
+                          **self.widget_kwargs)
 
     @classmethod
     def unflat(self, flat, delimiter='__'):
@@ -161,11 +164,11 @@ class DeclarativeFieldMeta(validators.DeclarativeMeta):
     def __new__(cls, name, bases, attrs):
         attrs['prefix'] = attrs.get('prefix', 'form')
         attrs = OrderedDict(
-                    sorted([(k, v) for k, v in attrs.iteritems()],
-                        cmp=lambda x, y: cmp(getattr(x[1], 'order_counter', None),
-                                             getattr(y[1], 'order_counter', None))
-                        )
+                sorted([(k, v) for k, v in attrs.iteritems()],
+                    cmp=lambda x, y: cmp(getattr(x[1], 'order_counter', None),
+                                         getattr(y[1], 'order_counter', None))
                     )
+                )
         return validators.DeclarativeMeta.__new__(cls, name, bases, attrs)
 
 
