@@ -23,8 +23,8 @@ class Base(object):
     def validate(self, safe=False):
         '''Validate data and return it
         '''
-        if not self.required and self.raw_data is None:
-            return None
+        if not self.required and not self.raw_data:
+            return self.raw_data
         try:
             self.validated_data = self.check_data()
         except ValidationError as e:
