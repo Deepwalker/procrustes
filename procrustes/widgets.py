@@ -21,27 +21,27 @@ class Base(object):
 
     def render(self):
         data = self.data if self.data else ''
-        attrs = ' '.join('%s="%s"' % (name, attr) for name, attr
-                                                  in self.attrs.iteritems())
+        attrs = u' '.join(u'%s="%s"' % (name, attr) for name, attr
+                                                    in self.attrs.iteritems())
         if attrs:
             attrs += ' '
         return self.render_html(self.name, attrs, data)
 
     def render_html(self, name, attrs, data):
-        return '<input id="{0}" name="{0}" {1}value="{2}">'.format(name, attrs,
+        return u'<input id="{0}" name="{0}" {1}value="{2}">'.format(name, attrs,
                                                                          data)
 
     def label(self):
         name = self.prefix + '__' + self.id
-        return '<label for="%s">%s</label>' % (name, self.label_name)
+        return u'<label for="%s">%s</label>' % (name, self.label_name)
 
 
 class Marker(Base):
     def render(self, *a, **kw):
-        return ''
+        return u''
 
     def label(self, *a, **kw):
-        return ''
+        return u''
 
 
 class CheckBox(Base):
@@ -49,17 +49,17 @@ class CheckBox(Base):
         checked = ''
         if data:
             checked = ' checked'
-        return ('<input type="checkbox" id="{0}" '
-                'name="{0}" {1}value="True"{3}>').format(name, attrs,
+        return (u'<input type="checkbox" id="{0}" '
+                u'name="{0}" {1}value="True"{3}>').format(name, attrs,
                                                          data, checked)
 
 class TextArea(Base):
     def render_html(self, name, attrs, data):
-        return ('<textarea id="{0}" '
-                'name="{0}" {1}>{2}</textarea>').format(name, attrs, data)
+        return (u'<textarea id="{0}" '
+                u'name="{0}" {1}>{2}</textarea>').format(name, attrs, data)
 
 
 class HiddenInput(Base):
     def render_html(self, name, attrs, data):
-        return ('<input type="password" id="{0}"'
-                ' name="{0}" {1}value="{2}">').format(name, attrs, data)
+        return (u'<input type="password" id="{0}"'
+                u' name="{0}" {1}value="{2}">').format(name, attrs, data)
