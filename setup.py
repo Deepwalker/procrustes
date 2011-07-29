@@ -8,7 +8,6 @@ if op.exists(act):
 import os.path
 from setuptools import setup, find_packages
 
-import procrustes
 
 
 def read(fname):
@@ -17,7 +16,7 @@ def read(fname):
 
 setupconf = dict(
     name = 'procrustes',
-    version = procrustes.__version__,
+    version = '0.1.1',
     license = 'BSD',
     url = 'https://github.com/Deepwalker/Procrustes/',
     author = 'Svarga Developers',
