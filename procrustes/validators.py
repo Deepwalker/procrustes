@@ -2,29 +2,38 @@
 
 import re
 from collections import defaultdict, Iterable
-from procrustes.register import procrustes
 from ordereddict import OrderedDict
 
 
 class Base(object):
-    default_data = None
 
-    def __init__(self, data=None, validate=False):
+    def __init__(self, *args, **kwargs):
+        self.args = list(args)
+        self.kwargs = kwargs.copy()
+        self.configure(args, kwargs)
+
+    def __call__(self, data=None, validate=True):
+        my_copy = type(self)(*list(self.args), **self.kwargs.copy())
+        my_copy.instantiate(data, validate)
+        return my_copy
+
+    def instantiate(self, data=None, validate=True):
         self.raw_data = data
         self.validated_data = self.default_data
         self.error = None
         if validate:
             self.validate(safe=True)
 
-    @classmethod
-    def configure(cls, *args, **kwargs):
-        pass
+    def configure(self, args, kwargs):
+        self.default_data = None
+        self.required = kwargs.pop('required', True)
 
     def validate(self, safe=False):
         '''Validate data and return it
         '''
         if not self.required and not self.raw_data:
-            return self.raw_data
+            self.validated_data = self.raw_data
+            return self.validated_data
         try:
             self.validated_data = self.check_data()
         except ValidationError as e:
@@ -34,7 +43,7 @@ class Base(object):
         return self.validated_data
 
     def check_data(self):
-        '''Inner validate function, without `required` flag check
+        '''Inner validation function, without `required` flag check
         '''
         raise NotImplementedError('Define `check_data` method')
 
@@ -55,8 +64,7 @@ class Base(object):
         '''
         yield '', self.validated_data
 
-    @classmethod
-    def deepen(cls, flat):
+    def deepen(self, flat):
         '''Return a canonical version of a flat representation of value
         '''
         if flat is None:
@@ -67,13 +75,13 @@ class Base(object):
             return None
 
 
-@procrustes.register()
 class Tuple(Base):
-    @classmethod
-    def configure(cls, *types):
-        cls.types = types
-        cls.len_types = len(types)
-        cls.default_data = []
+
+    def configure(self, args, kwargs):
+        super(Tuple, self).configure(args, kwargs)
+        self.types = args
+        self.len_types = len(args)
+        self.default_data = []
 
     def check_data(self):
         if not isinstance(self.raw_data, Iterable):
@@ -110,30 +118,29 @@ class Tuple(Base):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
 
-    @classmethod
-    def deepen(cls, flat, delimiter='__'):
+    def deepen(self, flat, delimiter='__'):
         collector = {}
-        set_nums = set(xrange(cls.len_types))
+        set_nums = set(xrange(self.len_types))
         for key, flatchild in sorted(group_by_key(flat, delimiter).iteritems()):
             try:
                 number = int(key)
             except ValueError:
                 continue
-            if number > cls.len_types:
+            if number > self.len_types:
                 continue
-            collector[number] = cls.types[number].deepen(flatchild)
+            collector[number] = self.types[number].deepen(flatchild)
             set_nums.remove(number)
         for i in set_nums: # Add unavailable slots
             collector[i] = None
         return tuple(v for k, v in sorted(collector.items()))
 
 
-@procrustes.register()
 class List(Base):
-    @classmethod
-    def configure(cls, type):
-        cls.type = type
-        cls.default_data = []
+
+    def configure(self, args, kwargs):
+        super(List, self).configure(args, kwargs)
+        self.type = args[0]
+        self.default_data = []
 
     def check_data(self):
         if not isinstance(self.raw_data, Iterable):
@@ -166,18 +173,18 @@ class List(Base):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
 
-    @classmethod
-    def deepen(cls, flat, delimiter='__'):
-        return [cls.type.deepen(flatchild) for flatchild in
+    def deepen(self, flat, delimiter='__'):
+        return [self.type.deepen(flatchild) for flatchild in
                 group_by_key(flat, delimiter).itervalues()]
 
 
-@procrustes.register()
 class Dict(Base):
-    @classmethod
-    def configure(cls, named_types):
-        cls.named_types = named_types
-        cls.default_data = {}
+    named_types = {}
+
+    def configure(self, args, kwargs):
+        super(Dict, self).configure(args, kwargs)
+        self.named_types = args[0]
+        self.default_data = {}
 
     def check_data(self):
         if not isinstance(self.raw_data, dict):
@@ -214,25 +221,26 @@ class Dict(Base):
                 tail = delimiter + key if key else ''
                 yield name + tail, data
 
-    @classmethod
-    def deepen(cls, flat, delimiter='__'):
+    def deepen(self, flat, delimiter='__'):
         result = {}
         grouped = group_by_key(flat, delimiter)
-        for name, ftype in cls.named_types.items():
+        for name, ftype in self.named_types.items():
             flatchild = grouped.pop(name, None)
             result[name] = ftype.deepen(flatchild)
         # TODO we may have unmatched data in `grouped`
         return result
 
 
-@procrustes.register()
 class String(Base):
-    @classmethod
-    def configure(cls, min_length=1, max_length=None, regex=None, regex_msg=None):
-        cls.min_length = min_length
-        cls.max_length = max_length
-        cls.regex = re.compile(regex) if regex is not None else None
-        cls.regex_msg = regex_msg if regex_msg else 'Dont match'
+
+    def configure(self, args, kwargs):
+        super(String, self).configure(args, kwargs)
+        self.min_length = kwargs.get('min_length', 1)
+        self.max_length = kwargs.get('max_length')
+        regex = kwargs.get('regex')
+        regex_msg = kwargs.get('regex_msg')
+        self.regex = re.compile(regex) if regex is not None else None
+        self.regex_msg = regex_msg if regex_msg else 'Dont match'
 
     def check_data(self):
         if not isinstance(self.raw_data, (str, unicode)):
@@ -251,12 +259,12 @@ class String(Base):
         return self.raw_data
 
 
-@procrustes.register()
 class Integer(Base):
-    @classmethod
-    def configure(cls, min=None, max=None):
-        cls.min = min
-        cls.max = max
+
+    def configure(self, args, kwargs):
+        super(Integer, self).configure(args, kwargs)
+        self.min = kwargs.get('min')
+        self.max = kwargs.get('max')
 
     def check_data(self):
         try:
@@ -272,7 +280,6 @@ class Integer(Base):
         return i
 
 
-@procrustes.register()
 class Boolean(Base):
     def check_data(self):
         return bool(self.raw_data)
@@ -284,17 +291,25 @@ class DeclarativeMeta(type):
         fields = OrderedDict()
         for name, attr in list(attrs.iteritems()): # explicit copy
             # isinstance(attr, type) == attr is a class
-            if isinstance(attr, type) and issubclass(attr, Base):
+            if isinstance(attr, Base):
                 fields[name] = attr
                 del attrs[name]
         attrs['named_types'] = fields
         attrs['required'] = attrs.get('required', True)
         attrs['default_data'] = {}
+
+        attrs['args'] = [fields.copy()]
+        attrs['kwargs'] = {'required': attrs['required']}
+
         return type.__new__(cls, name, bases, attrs)
 
 
 class Declarative(Dict):
     __metaclass__ = DeclarativeMeta
+
+    def __init__(self, data, validate=True):
+        super(Declarative, self).__init__(*list(self.args), **self.kwargs.copy())
+        self.instantiate(data, validate)
 
 
 # Helpers

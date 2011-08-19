@@ -5,6 +5,7 @@ from procrustes import forms
 from attest import Tests, Assert
 
 p = Tests()
+f = Tests()
 
 I = procrustes.Integer(max=90, required=False)
 S = procrustes.String()
@@ -29,6 +30,8 @@ def simple_tuple():
 def simple_list():
     PL = procrustes.List(I)
     pl = PL(xrange(7))
+    v1 = pl.validated_data[0]
+    v1.validate()
     Assert(pl.data) == range(7)
 
 
@@ -90,40 +93,42 @@ def declarative():
     Assert(fail.data) == {'name': None}
     Assert(fail.errors) == ['Must be shorter than 5']
 
+
 @p.test
 def forms_simple():
     str = forms.String()('kukuku')
     Assert(str.data) == 'kukuku'
 
     FT = forms.Tuple(forms.String(), forms.String())
-    FL = forms.List(forms.String())
     ft = FT()
     widgets = [widget.render() for widget in ft.widgets()]
-    Assert(widgets) == ['<input id="form__0" name="form__0" value="">',
-                        '<input id="form__1" name="form__1" value="">']
+    Assert(widgets) == [u'<input id="form__0" name="form__0" parent="" value="">',
+                        u'<input id="form__1" name="form__1" parent="" value="">']
 
     ft = FT(('kuku', 'kuku'))
     widgets = [widget.render() for widget in ft.widgets()]
-    Assert(widgets) == ['<input id="form__0" name="form__0" value="kuku">',
-                        '<input id="form__1" name="form__1" value="kuku">']
+    Assert(widgets) == [u'<input id="form__0" name="form__0" parent="" value="kuku">',
+                        u'<input id="form__1" name="form__1" parent="" value="kuku">']
+
+    FL = forms.List(forms.String())
     fl = FL(['kuku', 'dsfasfd', 'xcvxczvx'])
-    widgets = [widget.render() for widget in fl.widgets()]
-    Assert(widgets) == ['<input id="form__0" name="form__0" value="kuku">',
-                        '<input id="form__1" name="form__1" value="dsfasfd">',
-                        '<input id="form__2" name="form__2" value="xcvxczvx">']
+    widgets = [widget.render() for widget in fl.widgets() if widget.render()]
+    Assert(widgets) == [u'<input id="form__0" name="form__0" parent="" value="kuku">',
+                        u'<input id="form__1" name="form__1" parent="" value="dsfasfd">',
+                        u'<input id="form__2" name="form__2" parent="" value="xcvxczvx">']
 
 @p.test
 def forms_dict_field():
     FD = forms.Dict({'a': forms.String(), 'b': forms.String()})
     fd = FD()
     widgets = [widget.render() for widget in fd.widgets()]
-    Assert(widgets) == ['<input id="form__a" name="form__a" value="">',
-                        '<input id="form__b" name="form__b" value="">']
+    Assert(widgets) == ['<input id="form__a" name="form__a" parent="" value="">',
+                        '<input id="form__b" name="form__b" parent="" value="">']
 
     fd = FD({'a': 'kuku', 'b': 'may-may'})
     widgets = [widget.render() for widget in fd.widgets()]
-    Assert(widgets) == ['<input id="form__a" name="form__a" value="kuku">',
-                        '<input id="form__b" name="form__b" value="may-may">']
+    Assert(widgets) == ['<input id="form__a" name="form__a" parent="" value="kuku">',
+                        '<input id="form__b" name="form__b" parent="" value="may-may">']
 
 @p.test
 def forms_flat():
@@ -133,11 +138,11 @@ def forms_flat():
     unflat = FD.unflat(flat)
     Assert(unflat) == {'a': 'kuku', 'b': 'may-may', 'c': ['kuku', 'wer']}
     fd = FD(unflat)
-    widgets = [widget.render() for widget in fd.widgets()]
-    Assert(widgets) == ['<input id="form__a" name="form__a" value="kuku">',
-                        '<input id="form__c__0" name="form__c__0" value="kuku">',
-                        '<input id="form__c__1" name="form__c__1" value="wer">',
-                        '<input id="form__b" name="form__b" value="may-may">']
+    widgets = [widget.render() for widget in fd.widgets() if widget.render()]
+    Assert(widgets) == ['<input id="form__a" name="form__a" parent="" value="kuku">',
+                        '<input id="form__c__0" name="form__c__0" parent="" value="kuku">',
+                        '<input id="form__c__1" name="form__c__1" parent="" value="wer">',
+                        '<input id="form__b" name="form__b" parent="" value="may-may">']
     form = FD(flat)
     Assert(form.is_valid()) == True
     Assert(form.data) == {'a': 'kuku', 'b': 'may-may', 'c': ['kuku', 'wer']}

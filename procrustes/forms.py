@@ -5,56 +5,16 @@ from procrustes import validators, widgets, utils
 from ordereddict import OrderedDict
 
 
-class Forms(object):
-    counter = 0
-
-    def __init__(self):
-        self.fields = {}
-
-    def __getattr__(self, field):
-        if field in self.fields:
-            return partial(create_field, field)
-        raise AttributeError(field)
-
-    def register(self, *args):
-        largs = len(args)
-        def wrapper(field):
-            field_name = args[0] if largs else field.__name__
-            self.register(field_name, field)
-            return field
-
-        if largs==2:
-            self.fields[args[0]] = args[1]
-        else:
-            return wrapper
-
-forms = Forms()
-
-
-def create_field(field, *args, **kwargs):
-    cls = forms.fields[field]
-    new_cls = type('Pc' + field, (cls, ), {})
-    new_cls.order_counter = Forms.counter
-    Forms.counter += 1
-    new_cls.required = kwargs.pop('required', True)
-    new_cls.base_field_configure(args, kwargs)
-    new_cls.configure(*args, **kwargs)
-    return new_cls
-
-
 # Fields
 class FieldMixin(object):
-    @classmethod
-    def base_field_configure(cls, args, kwargs):
-        cls.widget = kwargs.pop('widget', getattr(cls, 'widget', widgets.Base))
-        cls.prefix = kwargs.pop('prefix', 'form')
-        cls.field_name = kwargs.pop('field_name', None)
-        cls.widget_kwargs = utils.pop_prefixed_args(kwargs, 'w_')
-        cls.field_configure(args, kwargs)
+    def configure(self, args, kwargs):
+        validators.Base.configure(self, args, kwargs)
 
-    @classmethod
-    def field_configure(cls, args, kwargs):
-        pass
+        self.widget = kwargs.pop('widget', getattr(self, 'widget', widgets.Base))
+        self.prefix = kwargs.pop('prefix', 'form')
+        self.field_name = kwargs.pop('field_name', None)
+        self.widget_kwargs = utils.pop_prefixed_args(kwargs, 'w_')
+        super(FieldMixin, self).configure(args, kwargs)
 
     def widgets(self, id, delimiter='__', parent=''):
         yield self.widget(data=self.data, id=id, error=self.error,
@@ -62,7 +22,6 @@ class FieldMixin(object):
                           label_name=self.field_name,
                           **self.widget_kwargs)
 
-    @classmethod
     def unflat(self, flat, delimiter='__'):
         pos = len(self.prefix) + 2
         flat = dict((key[pos:], value) for key, value in flat.iteritems())
@@ -90,12 +49,10 @@ class IterableMixin(object):
         return self.widgets(id, delimiter, parent, 'template_widgets')
 
 
-@forms.register()
 class Tuple(IterableMixin, FieldMixin, validators.Tuple):
     pass
 
 
-@forms.register()
 class List(IterableMixin, FieldMixin, validators.List):
     def widgets(self, id='', delimiter='__', parent=''):
         prefix = id + delimiter if id else ''
@@ -122,7 +79,6 @@ class List(IterableMixin, FieldMixin, validators.List):
         yield marker(marker='stop')
 
 
-@forms.register()
 class Dict(FieldMixin, validators.Dict):
     def widgets(self, id='', delimiter='__', parent='', attribute='widgets'):
         prefix = id + delimiter if id else ''
@@ -144,17 +100,14 @@ class Dict(FieldMixin, validators.Dict):
         return self.get_included()[attr]
 
 
-@forms.register()
 class String(FieldMixin, validators.String):
     pass
 
 
-@forms.register()
 class Integer(FieldMixin, validators.Integer):
     pass
 
 
-@forms.register()
 class Boolean(FieldMixin, validators.Boolean):
     widget = widgets.CheckBox
 
@@ -174,5 +127,3 @@ class DeclarativeFieldMeta(validators.DeclarativeMeta):
 
 class Declarative(Dict):
     __metaclass__ = DeclarativeFieldMeta
-
-forms.Declarative = Declarative
