@@ -11,6 +11,7 @@ class Base(object):
         self.args = list(args)
         self.kwargs = kwargs.copy()
         self.configure(args, kwargs)
+        self.absent = False # required and has data if False
 
     def __call__(self, data=None, validate=True):
         my_copy = type(self)(*list(self.args), **self.kwargs.copy())
@@ -33,6 +34,7 @@ class Base(object):
         '''
         if not self.required and not self.raw_data:
             self.validated_data = self.raw_data
+            self.absent = True
             return self.validated_data
         try:
             self.validated_data = self.check_data()
@@ -102,6 +104,8 @@ class Tuple(Base):
     def itererrors(self):
         if self.error:
             yield self.error
+        if self.absent:
+            raise StopIteration()
         for value in self.validated_data:
             for error in value.itererrors():
                 yield error
@@ -112,8 +116,9 @@ class Tuple(Base):
         return self.validated_data
 
     def flatten(self, delimiter='__'):
-        data = self.get_included()
-        for number, value in enumerate(data):
+        if not self.validated_data:
+            raise StopIteration()
+        for number, value in enumerate(self.validated_data):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
@@ -157,6 +162,8 @@ class List(Base):
     def itererrors(self):
         if self.error:
             yield self.error
+        if self.absent:
+            raise StopIteration()
         for value in self.validated_data:
             for error in value.itererrors():
                 yield error
@@ -167,8 +174,9 @@ class List(Base):
         return self.validated_data
 
     def flatten(self, delimiter='__'):
-        data = self.get_included()
-        for number, value in enumerate(data):
+        if not self.validated_data:
+            raise StopIteration()
+        for number, value in enumerate(self.validated_data):
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield str(number) + tail, data
@@ -204,6 +212,8 @@ class Dict(Base):
     def itererrors(self):
         if self.error:
             yield self.error
+        if self.absent:
+            raise StopIteration()
         for name, value in self.validated_data.iteritems():
             for error in value.itererrors():
                 yield error
@@ -215,8 +225,9 @@ class Dict(Base):
         return self.validated_data
 
     def flatten(self, delimiter='__'):
-        data = self.get_included()
-        for name, value in data.iteritems():
+        if not self.validated_data:
+            raise StopIteration()
+        for name, value in self.validated_data.iteritems():
             for key, data in value.flatten(delimiter):
                 tail = delimiter + key if key else ''
                 yield name + tail, data
